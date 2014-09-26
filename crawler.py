@@ -115,6 +115,7 @@ class StackOverflowAnswer(object):
 
 
 def main():
+    # This is just sample code. You can use the crawler however you like.
     crawler = StackOverflowCrawler()
     for page_metadata in crawler.crawl("http://stackoverflow.com/questions/tagged/java"):
         if page_metadata is not None:
