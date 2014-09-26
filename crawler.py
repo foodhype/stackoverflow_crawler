@@ -9,7 +9,7 @@ class StackOverflowCrawler(object):
         self.base_url = "http://stackoverflow.com"
         self.visited = set()
         self.remaining = []
-        self.limit = 10
+        self.limit = 300
         self.crawl_rate = 1
 
     def crawl(self, start_url):
@@ -20,7 +20,7 @@ class StackOverflowCrawler(object):
         while self.remaining and len(self.visited) < self.limit:
             current_url = self.remaining.pop()
         
-            print "Crawling %s..." % (current_url)
+            print "Crawling %s...\n\n" % (current_url)
         
             self.visited.add(current_url)
             response = urllib2.urlopen(current_url)
@@ -82,8 +82,6 @@ class StackOverflowCrawler(object):
 
         if question and answers:
             return PageMetadata(question, answers)
-        else:
-            return None
 
 
 class PageMetadata(object):
@@ -92,34 +90,41 @@ class PageMetadata(object):
         self.answers = answers
 
     def __str__(self):
-        return "\n".join([str(self.question), str(self.answers)])
+        
+        return "\n\n".join([str(self.question),
+            "\n".join([str(answer) for answer in self.answers])])
 
 
 class StackOverflowQuestion(object):
     def __init__(self, title, text, upvote_count):
         self.title = title
-        self.text = text
+        self.text = "".join(map(str, text[1:-1]))
         self.upvote_count = upvote_count
 
     def __str__(self):
-        return "\n".join([str(self.title), str(self.text), str(self.upvote_count)])
+        return "".join(["Question: %s\n" % (str(self.title)),
+                "Question Details: %s\n" % (str(self.text)),
+                "Question Upvote Count: %d\n" % (self.upvote_count)])
 
 
 class StackOverflowAnswer(object):
     def __init__(self, text, upvote_count):
-        self.text = text
+        self.text = "".join(map(str, text[1:-1]))
         self.upvote_count = upvote_count
 
     def __str__(self):
-        return "\n".join([str(self.text), str(self.upvote_count)])
+        return "".join(["Answer: %s\n" % (str(self.text)),
+                "Upvotes: %s\n" % (str(self.upvote_count))])
 
 
 def main():
-    # This is just sample code. You can use the crawler however you like.
+    pages = []
     crawler = StackOverflowCrawler()
-    for page_metadata in crawler.crawl("http://stackoverflow.com/questions/tagged/java"):
+    for page_metadata in crawler.crawl("http://stackoverflow.com/questions"):
         if page_metadata is not None:
-            print page_metadata.question.title
+            print page_metadata
+            pages.append(page_metadata)
+            
 
 if __name__ == "__main__":
     main()
