@@ -77,7 +77,6 @@ class StackOverflowCrawler(object):
             
             if (answer_text is not None and
                     answer_upvote_count is not None):
-
                 answers.append(StackOverflowAnswer(answer_text, answer_upvote_count))
 
         if question and answers:
@@ -89,8 +88,7 @@ class PageMetadata(object):
         self.question = question
         self.answers = answers
 
-    def __str__(self):
-        
+    def __str__(self):        
         return "\n\n".join([str(self.question),
             "\n".join([str(answer) for answer in self.answers])])
 
