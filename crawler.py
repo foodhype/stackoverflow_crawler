@@ -97,7 +97,7 @@ class PageMetadata(object):
 
 class StackOverflowQuestion(object):
     def __init__(self, title, text, upvote_count):
-        self.title = title
+        self.title = str(title)
         self.text = "".join(map(str, text[1:-1]))
         self.upvote_count = upvote_count
 
