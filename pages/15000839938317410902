@@ -1,0 +1,18 @@
+<h1>
+java - Synchronizing on local variable - Stack Overflow
+<\h1>
+<p>I noticed a weird construct in <a href="http://grepcode.com/file/repository.grepcode.com/java/root/jdk/openjdk/8-b132/java/util/concurrent/ConcurrentHashMap.java#1847"><code>ConcurrentHashMap</code>'s <code>compute</code> and <code>computeIfAbsent</code> methods</a>:</p>
+<pre><code>Node&lt;K,V&gt; r = new ReservationNode&lt;K,V&gt;();
+synchronized (r) {
+  //...
+}
+</code></pre>
+<p>What is the point of synchronizing on a local object considering that the JIT will most likely treat it as a no-op?</p>
+<p>Right after the code has acquired the object’s monitor, the reference to the object is stored into the <code>tab</code> which is the globally visible array of nodes which make up the contents of the <code>ConcurrentHashMap</code>:</p>
+<pre><code>Node&lt;K,V&gt; r = new ReservationNode&lt;K,V&gt;();
+synchronized (r) {
+    if (casTabAt(tab, i, null, r)) {
+</code></pre>
+<p>Right at this point, other threads executing other modification methods on the same <code>ConcurrentHashMap</code> might encounter this incomplete node while traversing the global array, in other words, the <code>Node</code> reference has escaped.</p>
+<p>While at the point where the <code>ReservationNode</code> has been constructed, there is no possibility for contention on a newly created object, in the other methods, which are synchronizing on <code>Node</code>s found in the array, there might be contention for exactly that <code>Node</code>.</p>
+<p>It’s like a “priority-synchronization”. The creator is synchronizing at a point where the reference has not been escaped yet therefore it is guaranteed to succeed while at the point where the reference escapes, all other threads will have to wait, in the unlikely (but still possible) event that they access exactly that <code>Node</code>.</p>

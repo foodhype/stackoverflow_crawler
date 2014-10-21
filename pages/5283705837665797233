@@ -1,0 +1,20 @@
+<h1>
+java - Can a thread acquire a lock on a instance of a class,when other thread is executing a static synchronized method of this class? - Stack Overflow
+<\h1>
+<p>suppose we have </p>
+<pre><code>class A {
+    void m1() {
+        synchronized (this) {
+        }
+        blah blah blah
+        synchronized (this) {
+        }
+    }
+}
+</code></pre>
+<p>My doubt is while executing blah blah blah, the currently executing thread with object o release lock, at this time if other thread with object o acquires the lock, There will be deadlock. So how can we say that we should try to use synchronized block instead of synchronized method?</p>
+<p>Suppose thread t1 executing static synchronized method which acquires a class level lock, can other thread acquire a lock of an instance of this class to execute other synchronized methods?</p>
+<p>While executing "blah blah blah", the currently executing thread doesn't own any locks.  It is possible for another thread to acquire the lock on the object, but that won't cause deadlock.  The first thread will simply block until the other thread releases the lock.</p>
+<p>A deadlock occurs when thread A owns lock 1, but needs lock 2 while thread B owns lock 2 but needs lock 1.  That isn't occurring in your situation.</p>
+<p>A class level lock is a different lock than the lock on an object instance.  So, a class level lock won't interfere with another thread executing other synchronized methods on an object.</p>
+<p>Yes. Synchronization on an object is completely independent of synchronization on the <code>Class&lt;?&gt;</code> object for the object's class.</p>

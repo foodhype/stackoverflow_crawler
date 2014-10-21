@@ -1,0 +1,113 @@
+<h1>
+java - Synchronized two threads not working synchronized - Stack Overflow
+<\h1>
+<p>consider the following code:</p>
+<pre><code>public class Main {
+
+    public static void main(String[] args){
+        MyObject obj = new MyObject();
+        Thread1 t1 = new Thread1(100,'#',obj);
+        Thread1 t2 = new Thread1(100,'*',obj);
+
+        t1.start();
+        t2.start();
+    }
+}
+</code></pre>
+<hr/>
+<pre><code>public class Thread1 extends Thread {
+
+    int myNum;
+    char myChar;
+    MyObject myObj;
+
+    public Thread1(int num, char c, MyObject obj){
+        myNum = num;
+        myChar = c;
+        myObj = obj;
+    }
+
+    public synchronized void run(){
+        for(int i = 1; i&lt;myNum; i++){
+            if((i%10)==0)
+                System.out.println("");
+            System.out.print(myChar);
+        }
+    }
+
+}
+</code></pre>
+<p><em>The class MyObject is empty class without anything spacial.
+My question is, why the synchronized is not working <strong>and I get printed the '#' and '</strong></em>' simultaneously and in random order and not one after the other? </p>
+<p>Synchronization locks the monitor of an object.  In your case, you are synchronizing against each of the threads objects, that is Thread A locks against Threads A's monitor and Thread B locks against Thread B's monitor.  Thus they are not interacting.</p>
+<p>I think that you meant the following for the run() method:</p>
+<pre><code>public void run(){
+  synchronized (myObj) {
+    for(int i = 1; i&lt;myNum; i++){
+        if((i%10)==0)
+            System.out.println("");
+        System.out.print(myChar);
+    }
+  }
+}
+</code></pre>
+<p>If that was indeed your intended use for myObj, then I would suggest the following change too; as it will help make the code more readable.</p>
+<p>Change:</p>
+<pre><code>MyObject myObj;
+</code></pre>
+<p>to:</p>
+<pre><code>private final MyObject lock;
+</code></pre>
+<p>EDIT an alternative approach,  that does not lock against myObj but instead the Thread1's instance of Class.</p>
+<pre><code>public void run(){
+    doJob();
+}
+
+private static synchronized void doJob() {
+    for(int i = 1; i&lt;myNum; i++){
+        if((i%10)==0)
+            System.out.println("");
+        System.out.print(myChar);
+    }
+}
+</code></pre>
+<p>You can try to put <strong>thread.join()</strong>, wait for first thread in execution finished to start next one</p>
+<pre><code>public class hilos {
+    public static void main(String[] args) throws InterruptedException{
+
+        MyObject obj = new MyObject();
+        Thread1 t1 = new Thread1(50,'#',obj);
+        Thread1 t2 = new Thread1(50,'*',obj);
+
+        Thread[] threads = {t1, t2}; 
+
+
+        start(threads);
+
+
+    }
+
+
+    public synchronized static void start(Thread[] threads) throws InterruptedException{
+
+        synchronized(threads){
+            for(int i=0; i &lt; threads.length; i++)   {
+                threads[i].start();
+                threads[i].join();
+            }
+        }
+
+    }
+}
+</code></pre>
+<p>OUTPUT:</p>
+<pre><code>#########
+##########
+##########
+##########
+##########*********
+**********
+**********
+**********
+**********
+</code></pre>

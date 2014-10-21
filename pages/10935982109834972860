@@ -1,0 +1,15 @@
+<h1>
+multithreading - What happens when a synchronized method is accessed at the same time in java? - Stack Overflow
+<\h1>
+<p>Ok, so I am trying to build a script that will automate some tests on x amount of machines...and I want them all to talk to one another. I am a bit new to thread and I have done some research about using synchronized methods. My question is, what happens when two separate threads try to access it? I understand it locks and gives the caller exclusive access, but then is the next call in line processed directly after it? I could have multiple threads call the same function at the same time and I want to be prepared to handle it. I also found this bit of information:</p>
+<blockquote>
+<p>When a method is called, the JVM creates a stack frame for the call in
+  the executing thread. This frame contains all of the local variables
+  declared in the method. In the case of any method, static or
+  otherwise, that doesn't access fields, each execution proceeds
+  completely independently on each thread. If the method uses parameters
+  in its calculation, these parameters are also located in the stack
+  frame, and multiple calls don't interfere with each other.</p>
+</blockquote>
+<p>This was said in another post and it was not in reference to a synchronized method. Sorry if I am not making myself clear,  but I just want to make sure what a certain function is called from a thread, that it is treated like a stack.</p>
+<p>If you have a synchronized method, and x threads try to access it at the same time, by magic, only one gets access and the others just wait (block) until the one that has access is finished with it. If the thread that is allowed inside the synchronized method never exits the block, you have what is called a deadlock.</p>
