@@ -1,0 +1,33 @@
+<h1>
+java - Feed Shader Program with World Units instead of (0f,1f) values - Stack Overflow
+<\h1>
+<p>I'm rendering a simple rectangle mesh using libgdx, and other geometric elements that are similar in simplicity. Therse are going to interact with the sprites I have setup in my game. The sprites' position and other properties are setup in world units and before each sprite draw session I setup the camera like this:</p>
+<pre><code>    camera.update();        
+    batch.setProjectionMatrix(camera.combined);
+</code></pre>
+<p>It all works well but I need to draw meshes using world units. How can I feed the shader program world coordinates(12.5f, 30f, etc, based on my game world data) instead of (0f, 1f) ranges? I want to draw several textured meshes so I need coordinates that are in relation with the other elements in the game.</p>
+<p>Here is how I draw a simple rectangle mesh :</p>
+<pre><code>    mesh = new Mesh(true, 4, 6, 
+            new VertexAttribute(Usage.Position, 3, "a_position"),
+            new VertexAttribute(Usage.TextureCoordinates, 2, "a_texCoords"));   
+    mesh.setVertices(new float[] {
+            -1.0f, -1.0f, 0, 0,1,
+            0.0f, -1.0f, 0,1,1,
+            0.0f, 0.0f, 0, 1,0,
+            -1.0f, 0.0f, 0,  0,0 });   
+    mesh.setIndices(new short[] { 0, 1, 2, 2, 3, 0});   
+
+
+    Gdx.graphics.getGL20().glEnable(GL20.GL_TEXTURE_2D);
+    Gdx.gl20.glActiveTexture(GL20.GL_TEXTURE);    
+    createShader();
+    shader.begin();
+    mesh.render(shader, GL20.GL_TRIANGLES);
+    shader.end();
+</code></pre>
+<p>Is there any way I can feed world units to the mesh vertices array ? </p>
+<p>You can transform the vertices in the vertex shader. This allows you to project world coordinates onto the -1 to 1 range required for rendering. This is typically done by multiplying the position vertex attribute with a (projection) matrix. Have a look at the <a href="https://github.com/libgdx/libgdx/blob/master/gdx/src/com/badlogic/gdx/graphics/g2d/SpriteBatch.java#L124" rel="nofollow">default spritebatch shader</a>, for an example of how to implement this.</p>
+<p>You can use the <code>camera.combined</code> matrix to multiply these vertices in vertex shader. Just like you did when specifying the projection matrix for the spritebatch. You'll have to assign this matrix to the uniform you've used in your vertex shader. An example of how to do this can also be found in <a href="https://github.com/libgdx/libgdx/blob/master/gdx/src/com/badlogic/gdx/graphics/g2d/SpriteBatch.java#L1041" rel="nofollow">default spritebatch implementation</a>.</p>
+<p>However, you might want to reconsider your approach. Since you're using a spritebatch, you can profit from a performance gain by using the spritebatch instead of manually rendering. This will also simplify the rendering for you, because you dont have to mess with the shader and matrices yourself. Spritebatch contains a method (<a href="http://libgdx.badlogicgames.com/nightlies/docs/api/com/badlogic/gdx/graphics/g2d/SpriteBatch.html#draw-com.badlogic.gdx.graphics.Texture-float:A-int-int-" rel="nofollow">javadoc</a>) which allows you to specify a manually created mesh (or vertices actually). Each vertex is expected to be 5 floats (x, y, u, v, color) in size and a multiple of four vertices (doesn't have to be a rectangle shape though) must provided (you can use <code>Color.WHITE.toFloatBits()</code> for the color).</p>
+<p>But, since you're trying to render a simple rectangle, you might as well use one of the more convenient methods that allows you to render a rectangle without having to create a mesh all together (<a href="http://libgdx.badlogicgames.com/nightlies/docs/api/com/badlogic/gdx/graphics/g2d/SpriteBatch.html" rel="nofollow">javadocs</a>). Or, even easier, use it how it is designed by creating a Sprite for your rectangle (<a href="https://github.com/libgdx/libgdx/wiki/Spritebatch%2C-Textureregions%2C-and-Sprites" rel="nofollow">wiki page</a>).</p>
+<p>Now, if you're still certain that you do want to create a mesh and shader manually, then I'd suggest learning that using e.g. a tutorial, instead of just diving into it. E.g. <a href="https://github.com/mattdesl/lwjgl-basics/wiki" rel="nofollow">these tutorials</a> might help you get started. The wiki also contains <a href="https://github.com/libgdx/libgdx/wiki/Shaders" rel="nofollow">an article</a> describing how to do this, including transforming vertices in the vertex shader.</p>

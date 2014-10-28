@@ -1,0 +1,108 @@
+<h1>
+java - Parameterized Selenium Tests in Parallel with TestNg - Stack Overflow
+<\h1>
+<p>First of all, sorry for my english, it's not so perfect :)</p>
+<p>So I'm facing with the following problem: I'm trying to run parallel tests in different browsers using Selenium Grid and TestNg and I pass the parameters in the @BeforeTest method. My problem is that when every test get initialized, it seems that they will use the last test's parameters. So in this example when I run the test, it will open two Chrome, instead of one Firefox and one Chrome.
+<em>(The browser.getDriver() method returns a RemoteWebDriver)</em></p>
+<p><strong>TestNG.xml:</strong></p>
+<pre><code>&lt;suite thread-count="2" verbose="10" name="testSuite" parallel="tests"&gt;
+  &lt;test name="nameOfTheTestFirefox"&gt;
+    &lt;parameter name="platform" value="windows"/&gt;
+    &lt;parameter name="browserVersion" value="32"/&gt;
+    &lt;parameter name="browserName" value="firefox"/&gt;
+    &lt;classes&gt;
+      &lt;class name="example.test.login.LoginOverlayTest"/&gt;
+    &lt;/classes&gt;
+  &lt;/test&gt; &lt;!-- nameOfTheTestFirefox --&gt;
+  &lt;test name="nameOfTheTestChrome"&gt;
+    &lt;parameter name="platform" value="windows"/&gt;
+    &lt;parameter name="browserVersion" value="38"/&gt;
+    &lt;parameter name="browserName" value="chrome"/&gt;
+    &lt;classes&gt;
+      &lt;class name="example.test.login.LoginOverlayTest"/&gt;
+    &lt;/classes&gt;
+  &lt;/test&gt; &lt;!-- nameOfTheTestChrome --&gt;
+&lt;/suite&gt; &lt;!-- testSuite --&gt;
+</code></pre>
+<p><strong>The AbstractTest class:</strong></p>
+<pre><code>public class SeleniumTest {
+
+    private static List&lt;WebDriver&gt; webDriverPool = Collections.synchronizedList(new ArrayList&lt;WebDriver&gt;());
+    private static ThreadLocal&lt;WebDriver&gt; driverThread;
+    public static BrowserSetup browser;
+
+    @Parameters({ "browserName", "browserVersion", "platform"})
+    @BeforeTest()
+    public static void beforeTest(String browserName, @Optional("none") String browserVersion, String platform) throws WrongBrowserException, WrongPlatformException {
+
+        final BrowserSetup browser = new BrowserSetup(browserName, browserVersion, platform);
+
+        driverThread = new ThreadLocal&lt;WebDriver&gt;() {
+
+            @Override
+            protected WebDriver initialValue() {
+                final WebDriver webDriver = browser.getDriver();
+                webDriverPool.add(webDriver);
+                return webDriver;
+            }
+
+        };
+
+    }
+
+    public static WebDriver getDriver() {
+        return driverThread.get();
+    }
+
+    @AfterTest
+    public static void afterTest() {
+        for (WebDriver driver : webDriverPool) {
+            driver.quit();
+        }
+    }
+
+}
+</code></pre>
+<p><strong>And my example @Tests:</strong></p>
+<pre><code>@Test
+public void test1() throws InterruptedException {
+    WebDriver driver = getDriver();
+    System.out.println("START: test1");
+    driver.get("http://google.com");
+    Thread.sleep(5000);
+    System.out.println("END:  test1, title: " + driver.getTitle());
+}
+
+@Test
+public void test2() throws InterruptedException {
+    WebDriver driver = getDriver();
+    System.out.println("START: test2");
+    driver.get("http://amazon.com");
+    Thread.sleep(5000);
+    System.out.println("END:  test2, title: " + driver.getTitle());
+}
+
+@Test
+public void test3() throws InterruptedException {
+    WebDriver driver = getDriver();
+    System.out.println("START: test3");
+    driver.get("http://stackoverflow.com");
+    Thread.sleep(5000);
+    System.out.println("END:  test3, title: " + driver.getTitle());
+}
+</code></pre>
+<p>So my question is how can I run the tests in parallel with the given parameters in separate threads?</p>
+<p>Thanks in advance!</p>
+<p>Peter</p>
+<p>Don't make the fields static.</p>
+<pre><code>private static List&lt;WebDriver&gt; webDriverPool = Collections.synchronizedList(new ArrayList&lt;WebDriver&gt;());
+private static ThreadLocal&lt;WebDriver&gt; driverThread;
+public static BrowserSetup browser;
+</code></pre>
+<p>beforeTest() and afterTest() shouldn't be static if you want to run it in parallel, or make it synchronized to have it thread safe. Also, you do not use declared variable:</p>
+<pre><code>public static BrowserSetup browser; 
+</code></pre>
+<p>at all, or you missed something there since you also have:</p>
+<pre><code>final BrowserSetup browser = new BrowserSetup(browserName, browserVersion, platform);
+</code></pre>
+<p>inside beforeTest(...)</p>

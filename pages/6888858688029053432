@@ -1,0 +1,119 @@
+<h1>
+java - How to unmarshal xml with repetitive entries using JAXB and Spring - Stack Overflow
+<\h1>
+<p>I have to convert <code>xml</code> to <code>Map&lt;String,String&gt;</code>. I have following XML structure:</p>
+<pre><code>&lt;?xml version="1.0" encoding="utf-8" standalone="yes"?&gt;
+&lt;Environments&gt;
+  &lt;Environment Name="A" URIPath="http://a.com" /&gt;
+  &lt;Environment Name="B" URIPath="http://b.com" /&gt;
+  &lt;Environment Name="C" URIPath="http://c.com" /&gt;
+&lt;/Environments&gt; 
+</code></pre>
+<p>I tried multiple ways but eneded with <code>Class has two properties of the same name "URIPath"</code>. What is the right design for unmarshalling this XML?</p>
+<p><strong>UPDATE:</strong></p>
+<p>Using provided solution #1 I am getting :</p>
+<pre><code>Class has two properties of the same name "environments"
+    this problem is related to the following location:
+        at public java.util.List app.model.Environments.getEnvironments()
+        at app.model.Environments
+    this problem is related to the following location:
+        at public java.util.List app.model.Environments.environments
+        at app.model.Environments
+Class has two properties of the same name "URIPath"
+    this problem is related to the following location:
+        at public java.lang.String app.model.Environment.getURIPath()
+        at app.model.Environment
+        at public java.util.List app.model.Environments.environments
+        at app.model.Environments
+    this problem is related to the following location:
+        at java.lang.String app.model.Environment.URIPath
+        at app.model.Environment
+        at public java.util.List app.model.Environments.environments
+        at app.model.Environments
+] with root cause
+</code></pre>
+<p>You have 2 options:</p>
+<p>1) Unmarshal a collection of <code>Environment</code> instances with 2 fields: <code>Name</code> and <code>URIPath</code>. You can build the map later if you want to from the collection.</p>
+<p>2) Use a custom <a href="http://docs.oracle.com/javase/8/docs/api/javax/xml/bind/annotation/adapters/XmlAdapter.html" rel="nofollow"><code>XmlAdapter</code></a> which properly creates the map from the collection.</p>
+<h2>Elaborating Solution #1</h2>
+<p>This solution needs the following classes:</p>
+<pre><code>class Environments {
+    @XmlElement(name = "Environment")
+    public List&lt;Environment&gt; environments;
+}
+
+class Environment {
+    @XmlAttribute(name = "Name")
+    public String Name;
+    @XmlAttribute(name = "URIPath")
+    public String URIPath;
+}
+</code></pre>
+<p>And using these, unmarhaling:</p>
+<pre><code>Environments environments = JAXB.unmarshal(new File("env.xml"),
+    Environments.class);
+</code></pre>
+<h2>Elaborating Solution #2</h2>
+<p>If you want to use a custom <code>XmlAdapter</code> to directly get a <code>Map</code>, the XML input in its current form cannot be used. It has to be slightly modified to put a wrapper XML element around it. This is required because in Java the <code>Map</code> is a property of a class but the <code>&lt;Environments&gt;</code> tag is just the wrapper for the <code>Map</code>. Example modified XML:</p>
+<pre><code>&lt;?xml version="1.0" encoding="utf-8" standalone="yes"?&gt;
+&lt;wrapper&gt;
+  &lt;Environments&gt;
+    &lt;Environment Name="A" URIPath="http://a.com" /&gt;
+    &lt;Environment Name="B" URIPath="http://b.com" /&gt;
+    &lt;Environment Name="C" URIPath="http://c.com" /&gt;
+  &lt;/Environments&gt;
+&lt;/wrapper&gt;
+</code></pre>
+<p>Taking this as the input XML, here is the solution:</p>
+<pre><code>class EnvironmentMap {
+    @XmlJavaTypeAdapter(value = EnvMapAdapter.class)
+    @XmlElement(name = "Environments")
+    public Map&lt;String, String&gt; envMap;
+}
+
+class Environments {
+    @XmlElement(name = "Environment")
+    public List&lt;Environment&gt; environments;
+}
+
+class Environment {
+    @XmlAttribute(name = "Name")
+    public String name;
+    @XmlAttribute(name = "URIPath")
+    public String uriPath;
+}
+
+class EnvMapAdapter extends XmlAdapter&lt;Environments, Map&lt;String, String&gt;&gt; {
+    @Override
+    public Map&lt;String, String&gt; unmarshal(Environments envs) throws Exception {
+        Map&lt;String, String&gt; map = new HashMap&lt;&gt;();
+        for (Environment env : envs.environments)
+            map.put(env.name, env.uriPath);
+        return map;
+    }
+
+    @Override
+    public Environments marshal(Map&lt;String, String&gt; map) throws Exception {
+        Environments environments = new Environments();
+        // This method is only called if you marshal (Java -&gt; XML)
+        environments.environments = new ArrayList&lt;&gt;(map.size());
+
+        for (Entry&lt;String, String&gt; entry : map.entrySet()) {
+            Environment e = new Environment();
+            e.name = entry.getKey();
+            e.uriPath = entry.getValue();
+            environments.environments.add(e);
+        }
+
+        return environments;
+    }
+}
+</code></pre>
+<p>And using it:</p>
+<pre><code>EnvironmentMap envMap = JAXB.unmarshal(new File("env2.xml"),
+    EnvironmentMap.class);
+System.out.println(envMap.envMap);
+</code></pre>
+<p>Which prints:</p>
+<pre><code>{A=http://a.com, B=http://b.com, C=http://c.com}
+</code></pre>

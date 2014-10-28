@@ -1,0 +1,119 @@
+<h1>
+java - Read column values from xml exported from mysql - Stack Overflow
+<\h1>
+<p>I need to read the columns of a table exported from mysql database. My sample xml </p>
+<pre><code>&lt;?xml version="1.0" encoding="utf-8" ?&gt; 
++ &lt;!-- - phpMyAdmin XML Dump
+- version 3.4.5
+- http://www.phpmyadmin.net
+-
+- Host: localhost
+- Generation Time: Oct 28, 2014 at 07:45 AM
+- Server version: 5.5.16
+- PHP Version: 5.3.8
+
+  --&gt; 
+- &lt;pma_xml_export version="1.0" xmlns:pma="http://www.phpmyadmin.net/some_doc_url/"&gt;
+- &lt;!-- 
+    - Structure schemas
+
+
+  --&gt; 
+- &lt;pma:structure_schemas&gt;
+- &lt;pma:database name="ArchiveIndexer" collation="utf32_unicode_ci" charset="utf32"&gt;
+  &lt;pma:table name="classificationl2"&gt;CREATE TABLE `classificationl2` ( `SNo` int(4) NOT NULL AUTO_INCREMENT, `L1Name` varchar(128) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL, `L2Name` varchar(128) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL, PRIMARY KEY (`SNo`) ) ENGINE=InnoDB AUTO_INCREMENT=128 DEFAULT CHARSET=latin1;&lt;/pma:table&gt; 
+  &lt;/pma:database&gt;
+  &lt;/pma:structure_schemas&gt;
+- &lt;!-- 
+    - Database: 'ArchiveIndexer'
+
+
+  --&gt; 
+- &lt;database name="ArchiveIndexer"&gt;
+- &lt;!--  Table classificationl2 
+  --&gt; 
+- &lt;table name="classificationl2"&gt;
+  &lt;column name="SNo"&gt;4&lt;/column&gt; 
+  &lt;column name="L1Name"&gt;AC     கலை-கலாசாரம் - ARTS CULTURE&lt;/column&gt; 
+  &lt;column name="L2Name"&gt;AW     விருதுகள் விழாக்கள் -  AWARDS FUNCTIONS&lt;/column&gt; 
+  &lt;/table&gt;
+- &lt;table name="classificationl2"&gt;
+  &lt;column name="SNo"&gt;5&lt;/column&gt; 
+  &lt;column name="L1Name"&gt;ACகலை-கலாசாரம் - ARTS &amp; CULTURE&lt;/column&gt; 
+  &lt;column name="L2Name"&gt;BUஅழகிப் போட்டி - BEAUTY CONTESTS&lt;/column&gt; 
+  &lt;/table&gt;
+- &lt;table name="classificationl2"&gt;
+  &lt;column name="SNo"&gt;6&lt;/column&gt; 
+  &lt;column name="L1Name"&gt;ACகலை-கலாசாரம் - ARTS &amp; CULTURE&lt;/column&gt; 
+  &lt;column name="L2Name"&gt;DAநடனம் - DANCE&lt;/column&gt; 
+  &lt;/table&gt;
+- &lt;table name="classificationl2"&gt;
+  &lt;column name="SNo"&gt;7&lt;/column&gt; 
+  &lt;column name="L1Name"&gt;ACகலை-கலாசாரம் - ARTS &amp; CULTURE&lt;/column&gt; 
+  &lt;column name="L2Name"&gt;DRநாடகம் - DRAMA&lt;/column&gt; 
+  &lt;/table&gt;
+ &lt;/database&gt;
+  &lt;/pma_xml_export&gt;
+</code></pre>
+<p>I want to know how to read and set all the L1name to a jcombo box and also need to retrieve l2 values based on selected L1 value. I did this using jdbc but now my requirement is to remove jdbc. Any idea please suggest.</p>
+<p>try this it will help for sure</p>
+<pre><code>public class XMLreadsample {
+public static ArrayList&lt;String&gt; L1names  = new ArrayList();
+public static ArrayList&lt;String&gt; L2names  = new ArrayList();
+
+public static void main(String[] args) {
+
+    try {
+        DocumentBuilderFactory docBuilderFactory = DocumentBuilderFactory.newInstance();
+        DocumentBuilder docBuilder = docBuilderFactory.newDocumentBuilder();
+        Document doc = docBuilder.parse(new File("classification2.xml"));
+        doc.getDocumentElement().normalize();
+        System.out.println("Root element of the doc is " +    doc.getDocumentElement().getNodeName());
+
+        NodeList listOfPersons = doc.getElementsByTagName("table");
+        int totalPersons = listOfPersons.getLength();
+        System.out.println("Total no of columns : " + totalPersons);
+
+        for (int s = 0; s &lt; listOfPersons.getLength(); s++) {
+
+            Node firstPersonNode = listOfPersons.item(s);
+            if (firstPersonNode.getNodeType() == Node.ELEMENT_NODE) {
+                Element firstPersonElement = (Element) firstPersonNode;
+                NodeList firstNameList = firstPersonElement.getElementsByTagName("column");
+                Element firstNameElement = (Element) firstNameList.item(0);
+
+                NodeList textFNList = firstNameElement.getChildNodes();
+                System.out.println("Sl.NO : " + ((Node) textFNList.item(0)).getNodeValue().trim());
+
+                NodeList lastNameList = firstPersonElement.getElementsByTagName("column");
+                Element lastNameElement = (Element) lastNameList.item(1);
+
+                NodeList textLNList = lastNameElement.getChildNodes();
+                System.out.println("L1 Name : " + ((Node) textLNList.item(0)).getNodeValue().trim());
+                L1names.add(((Node) textLNList.item(0)).getNodeValue().trim());
+                NodeList ageList = firstPersonElement.getElementsByTagName("column");
+                Element ageElement = (Element) ageList.item(2);
+                NodeList textAgeList = ageElement.getChildNodes();
+                System.out.println("L2 Name : " + ((Node) textAgeList.item(0)).getNodeValue().trim());
+               L2names.add(((Node) textAgeList.item(0)).getNodeValue().trim());
+            }//end of if clause
+        }//end of for loop with s var
+        System.err.println("L1names --&gt; "+L1names);
+        System.err.println("L2names --&gt; "+L2names);
+
+        System.err.println("L1names size --&gt; "+L1names.size());
+        System.err.println("L2names size --&gt; "+L2names.size());
+    } catch (SAXParseException err) {
+        System.out.println("** Parsing error" + ", line " + err.getLineNumber() + ", uri " + err.getSystemId());
+        System.out.println(" " + err.getMessage());
+
+    } catch (SAXException e) {
+        Exception x = e.getException();
+        ((x == null) ? e : x).printStackTrace();
+
+    } catch (Throwable t) {
+        t.printStackTrace();
+    }
+}
+}
+</code></pre>

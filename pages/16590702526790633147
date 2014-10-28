@@ -1,0 +1,31 @@
+<h1>
+java - How to find specific path patterns efficiently? - Stack Overflow
+<\h1>
+<p>Looking for a pattern to search for specific paths on the grid. There is 2D grid of simple nodes like:</p>
+<pre><code>public class TileNode {
+    private final int ID;
+
+    public TileNode leftNeightbour;
+    public TileNode topNeightbour;
+    public TileNode rightNeightbour;
+    public TileNode bottomNeightbour;
+    private TileState currentTileGameState;
+}
+</code></pre>
+<p>If one of neighbours is unable to pass by current node it's state is set for <code>outOfGame</code>. I've tried with recursive DFS alg to find all paths but the complexity was terrible. I will try to cut of search collection with those paths to search:
+<img alt="enter image description here" src="http://i.stack.imgur.com/yqIaC.png"/></p>
+<p>The red nodes are those where we start and finish, the black lines are paths which should go trough other nodes(neighbours), who are able to be passed. </p>
+<p>We do not consider any other paths other than those specified. And of course there is no limit for length of of those paths.</p>
+<p><strong>EDIT:</strong>
+I would like to check if between two nodes exists any path that would follow the path on image. It might be pretty simple. There might exist more than one of them. It looks similary to those paths <a href="https://play.google.com/store/apps/details?id=com.kits.projectp&amp;hl=en" rel="nofollow">example</a></p>
+<p>I think your data structure doesn't lend itself to finding the kind of paths you want, because you are not looking for any path, but for paths of a certain shape.</p>
+<p>It might be better to work with a real grid of data, i.e. a two-dimensional array, instead of a graph-like structure with links. At least you should know your horizontal and vertical positions (x, y).</p>
+<p>Then you can treat your problem like this: Find vertical paths, i.e. paths where the middle segment is vertical. There are no vertical paths when the y coordinate (going upwards) of the two tiles is the same. Then find hoizontal paths. Paths with only two or three segments can be considered degenerate cases of a three-segmant path.</p>
+<p>So if the y position of tiles is different:</p>
+<ul>
+<li>Find the leftmost and rightmost position that is reachable from the start and end tiles, [L1, R1] and [L2, R2].</li>
+<li>When both L1 and L2 are beyond the left border of the grid or if both R1 and R2 are beyond the right border of the grid, you have a path.</li>
+<li>Find the intersection of the two ranges, [L, R] = [L1, R1] ∩ [L2, R2]. If that intersection is empty, there is no (vertical) path.</li>
+<li>For all x positions in [L, R], test whether there is a possible direct line from (x, y1) to (x, y2).</li>
+</ul>
+<p>Do the same for horizontal paths if there was no vertical path.</p>

@@ -1,0 +1,62 @@
+<h1>
+java - Combining ArrayList - Stack Overflow
+<\h1>
+<pre><code>import java.util.ArrayList;
+import java.util.Collections;
+
+public class SmartCombining {
+    public static void main(String[] args) {
+        ArrayList&lt;Integer&gt; list1 = new ArrayList&lt;Integer&gt;();
+        ArrayList&lt;Integer&gt; list2 = new ArrayList&lt;Integer&gt;();
+
+        Collections.addAll(list1, 4, 3);
+        Collections.addAll(list2, 5, 10, 4, 3, 7);
+
+        smartCombine(list1, list2);
+        System.out.println(list1);
+        System.out.println(list2);
+    }
+
+    public static void smartCombine(ArrayList&lt;Integer&gt; first,
+            ArrayList&lt;Integer&gt; second) {
+        first.addAll(second);
+    }    
+}
+</code></pre>
+<p>So, I want to combine two lists into one, but if the second list contains a number from the first it won't be added. So far my method adds them all together.</p>
+<p>Well, one way to do it is to iterate through the second list while checking if each element exists in the first list. If it doesn't, add it.</p>
+<pre><code>public static void smartCombine(ArrayList&lt;Integer&gt; first, ArrayList&lt;Integer&gt; second) {
+     for(Integer num : second) {      // iterate through the second list
+         if(!first.contains(num)) {   // if first list doesn't contain current element
+             first.add(num);          // add it to the first list
+         }
+     }
+}  
+</code></pre>
+<p>Another way would be for you to hold your values inside a set (like <code>HashSet</code>) which doesn't allow any duplicates. Then you can combine them like:</p>
+<pre><code>first.addAll(second);
+</code></pre>
+<p>One more way you could do it is to first remove all elements from the first list that exist in the second list (the ones that would be duplicated). Then you add all elements of the second list to the first list.</p>
+<pre><code>public static void smartCombine(ArrayList&lt;Integer&gt; first, ArrayList&lt;Integer&gt; second) {
+    first.removeAll(second); // remove elements that would be duplicated
+    first.addAll(second);    // add elements from second list
+}   
+</code></pre>
+<p>The simple, no brains solution:</p>
+<pre><code>Set&lt;Integer&gt; joinedSet = new HashSet&lt;Integer&gt;();
+joinedSet.addAll(list1);
+joinedSet.addAll(list2);
+</code></pre>
+<p>Use <code>Set</code>, it has been created for that purpose. A <code>Set</code> cannot contain 2 identical elements, based on the <code>equals</code> method.</p>
+<pre><code>Set&lt;Integer&gt; list1 = new HashSet&lt;Integer&gt;();
+Set&lt;Integer&gt; list2 = new HashSet&lt;Integer&gt;();
+</code></pre>
+<p>Using a combination of <code>ArrayList</code> and <code>contains</code> method is an antipattern here.</p>
+<p>Remove duplicates, then merge both lists:</p>
+<pre><code>list1.remove(list2);
+list1.addAll(list2);
+</code></pre>
+<p>If you dont want to alter the original list, then first create a backup:</p>
+<pre><code>list1BP = new ArrayList(list1);
+</code></pre>
+<p>Another approach is to use <a href="http://docs.oracle.com/javase/7/docs/api/java/util/HashSet.html" rel="nofollow">HashSet</a>, see other answers.</p>

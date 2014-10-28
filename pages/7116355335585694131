@@ -1,0 +1,79 @@
+<h1>
+java - StdIn library in Netbeans - StdIn.readInt() - Stack Overflow
+<\h1>
+<p>I'm only a beginner with java currently studying at university, but for reasons i'll not go into I can't ask my tutor.</p>
+<p>I'm having a problem using the StdIn library in Netbeans. In classes we use DrJava but since I can't get it to run on my Mac, i've resorted to Netbeans. In the following code, I can get it to run in Dr Java (it is a basic introduction to using standard input and output), but when i run it in netbeans, it throws a runtime error.</p>
+<p>(i have included the StdIn.java and StdOut.java files in the same directory as the MaxMin.java file)</p>
+<pre><code>    public class MaxMin {
+
+
+public static void main(String[] args) {
+
+    // first value read initialized min and max
+    int max = StdIn.readInt();
+    int min = max;
+
+    // read in the data, keep track of min and max
+    while (!StdIn.isEmpty()) {
+        int value = StdIn.readInt();
+        if (value &gt; max) max = value;
+        if (value &lt; min) min = value;
+    }
+
+    // output
+    StdOut.println("maximum  = " + max + ", minimum = " + min);
+}
+</code></pre>
+<p>I then get this runtime error in the netbeans output window. </p>
+<pre><code>    Exception in thread "main" java.lang.RuntimeException: Uncompilable source code - Erroneous sym type: maxmin.StdIn.readInt
+at maxmin.MaxMin.main(MaxMin.java:19)
+    Java Result: 1
+    BUILD SUCCESSFUL (total time: 0 seconds)
+</code></pre>
+<p>I apologise for what must be a very basic problem, but i can't find any relevant help on this here in stack overflow.</p>
+<p>I'm sure the code itself is ok as it is copied exactly from an online textbook:</p>
+<p><a href="http://introcs.cs.princeton.edu/java/15inout/MaxMin.java.html" rel="nofollow">http://introcs.cs.princeton.edu/java/15inout/MaxMin.java.html</a></p>
+<p>Can anyone shed some light on why Netbeans throws the runtime error instead of asking me for input?</p>
+<p>EDIT
+In response to a suggestion, I deselected 'Compile on save' in the project build options and then did the 'clean and build project'. and came up with these errors:</p>
+<pre><code>ant -f /Users/xUsernamex/NetBeansProjects/MaxMin -Dnb.internal.action.name=rebuild clean jar
+init:
+deps-clean:
+Updating property file: /Users/xUsernamex/NetBeansProjects/MaxMin/build/built-clean.properties
+Deleting directory /Users/xUsernamex/NetBeansProjects/MaxMin/build
+clean:
+init:
+deps-jar:
+Created dir: /Users/xUsernamex/NetBeansProjects/MaxMin/build
+Updating property file: /Users/xUsernamex/NetBeansProjects/MaxMin/build/built-jar.properties
+Created dir: /Users/xUsernamex/NetBeansProjects/MaxMin/build/classes
+Created dir: /Users/xUsernamex/NetBeansProjects/MaxMin/build/empty
+Created dir: /Users/xUsernamex/NetBeansProjects/MaxMin/build/generated-sources/ap-source-output
+Compiling 3 source files to /Users/xUsernamex/NetBeansProjects/MaxMin/build/classes
+/Users/xUsernamex/NetBeansProjects/MaxMin/src/maxmin/MaxMin.java:19: error: cannot find symbol
+    int max = StdIn.readInt();
+  symbol:   variable StdIn
+  location: class MaxMin
+/Users/xUsernamex/NetBeansProjects/MaxMin/src/maxmin/MaxMin.java:23: error: cannot find symbol
+    while (!StdIn.isEmpty()) {
+  symbol:   variable StdIn
+  location: class MaxMin
+/Users/xUsernamex/NetBeansProjects/MaxMin/src/maxmin/MaxMin.java:24: error: cannot find symbol
+        int value = StdIn.readInt();
+  symbol:   variable StdIn
+  location: class MaxMin
+/Users/xUsernamex/NetBeansProjects/MaxMin/src/maxmin/MaxMin.java:31: error: cannot find symbol
+            if (value &lt; 0) StdOut.println("Please use positive values");
+  symbol:   variable StdOut
+  location: class MaxMin
+/Users/xUsernamex/NetBeansProjects/MaxMin/src/maxmin/MaxMin.java:35: error: cannot find symbol
+    StdOut.println("maximum  = " + max + ", minimum = " + min);
+  symbol:   variable StdOut
+  location: class MaxMin
+5 errors
+/Users/xUsernamex/NetBeansProjects/MaxMin/nbproject/build-impl.xml:923: The following error         occurred while executing this line:
+/Users/xUsernamex/NetBeansProjects/MaxMin/nbproject/build-impl.xml:263: Compile failed; see the     compiler error output for details.
+BUILD FAILED (total time: 0 seconds)
+</code></pre>
+<p>It looks to me as if I'm having some issue with recognising the StdIn and StdOut libraries, but I'm not sure what to do about that. In Netbeans, which folder should I put them in?</p>
+<p>This error occurs in netbeans if some classes are not compilable. you can try deselecting 'Compile On Save' in the project build options. Now clean&amp;build your project and then run your code. </p>

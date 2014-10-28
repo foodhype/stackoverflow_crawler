@@ -1,0 +1,56 @@
+<h1>
+C# data to Java - Stack Overflow
+<\h1>
+<p>I want to check if a Windows Workstation is logged on or off. I've found a solution in <strong>C#</strong>:</p>
+<pre><code>public class CheckForWorkstationLocking : IDisposable
+{
+    private SessionSwitchEventHandler sseh;
+    void SysEventsCheck(object sender, SessionSwitchEventArgs e)
+    {
+        switch (e.Reason)
+        {
+            case SessionSwitchReason.SessionLock: Console.WriteLine("Lock Encountered"); break;
+            case SessionSwitchReason.SessionUnlock: Console.WriteLine("UnLock Encountered"); break;
+        }
+    }
+
+    public void Run()
+    {
+        sseh = new SessionSwitchEventHandler(SysEventsCheck);
+        SystemEvents.SessionSwitch += sseh;
+    }
+
+
+    #region IDisposable Members
+
+    public void Dispose()
+    {
+        SystemEvents.SessionSwitch -= sseh;
+    }
+
+    #endregion
+}
+</code></pre>
+<p>but at the end I'm going to need this <strong>boolean</strong> in my <code>Java Program</code>. </p>
+<p>I already tried the following:<br/>
+I started both programs and <strong>C#</strong> writes into a file from where I can check all few seconds if the data has changed or not from <strong>java</strong> (don't need to say that this solution is just slow and insufficient)</p>
+<p>Another solution would be :<br/>
+<strong>Java</strong> starts the <strong>C#</strong> .exe which waits until <strong>Java</strong> connects to it through sockets and they share the data over the open connection.</p>
+<p>Is there a better way to solve this with less effort than with this <strong>socket</strong> interface solution?</p>
+<p>You don't have to go to any complicated lengths to get this done.  It can be quite simple.</p>
+<p>Save the boolean into a file in C#, then have a file watcher watching the directory in Java.  If there is a change it can read the file in Java and find the value of the boolean.  Such a solution would not be expensive and eat up a lot of CPU cycles, like a solution where you had a while loop that checked the file would be.</p>
+<p>The beginnings of the Java code can be as simple as</p>
+<pre><code>import static java.nio.file.StandardWatchEventKinds.*;
+
+Path dir = ...;
+try {
+    WatchKey key = dir.register(watcher,
+                           ENTRY_CREATE,
+                           ENTRY_DELETE,
+                           ENTRY_MODIFY);
+} catch (IOException x) {
+    System.err.println(x);
+}
+</code></pre>
+<p>There are lots of possible solutions to this issue. My personal preference would be to use a message queue to post messages between the applications. (<a href="http://zeromq.org/" rel="nofollow">http://zeromq.org/</a> is light and would be my recommendation)</p>
+<p>The advantage of this approach is the two applications are decoupled and and its not relying on   the filesystem which is notoriously prone to errors. </p>

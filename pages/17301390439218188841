@@ -1,0 +1,39 @@
+<h1>
+java - How to retrieve prefixed child elements using JDom - Stack Overflow
+<\h1>
+<p>I have the following xml snippet from which I am trying to retrieve the first element using JDOM but I am getting nullpointer exception.please help me out if any one knows.</p>
+<pre><code>&lt;db1:customer xmlns:db1="http://www.project1.com/db1"&gt;
+&lt;db1:customerId&gt;22&lt;/db1:customerId&gt;
+&lt;db1:customerName&gt;PRASAD44&lt;/db1:customerName&gt;
+&lt;db1:address&gt;Chennai&lt;/db1:address&gt;
+&lt;db1:email&gt;pkk@gmail.com&lt;/db1:email&gt;
+&lt;db1:lastUpdate&gt;2014-08-01T00:00:00+05:30&lt;/db1:lastUpdate&gt;
+&lt;db1:nameDetail&gt;BSM_RESTeter&lt;/db1:nameDetail&gt;
+&lt;db1:phoneBiz&gt;9916347942&lt;/db1:phoneBiz&gt;
+&lt;db1:phoneHome&gt;9916347942&lt;/db1:phoneHome&gt;
+&lt;db1:phoneMobile&gt;944990031&lt;/db1:phoneMobile&gt;
+&lt;db1:rating&gt;22&lt;/db1:rating&gt;
+&lt;/db1:customer&gt;
+</code></pre>
+<p>here is what I am doing,</p>
+<pre><code>    SAXBuilder builder = new SAXBuilder();
+    File xmlFile = new File("CommonFiles/file.xml");
+    Document doc = (Document) builder.build(xmlFile);
+    Element rootNode = doc.getRootElement();
+    Element customerid = rootNode.getChild("sure:customerId");
+    System.out.println("customerid ======"+customerid); 
+</code></pre>
+<p>The print statement displays null.</p>
+<p>When dealing with XML containing namespaces, you need to use the <code>Namespace</code> instance that's appropriate for your document. In this case, you have:</p>
+<blockquote>
+<pre><code>&lt;db1:customer xmlns:db1="http://www.project1.com/db1"&gt;
+</code></pre>
+</blockquote>
+<p>The namespace here is <code>http://www.project1.com/db1</code> and the prefix is <code>db1</code>.</p>
+<p>In JDOM you can creaate a reference to a namespace with:</p>
+<pre><code>Namespace db1 = Namespace.getNamespace("db1", "http://www.project1.com/db1");
+</code></pre>
+<p>Now, when you retrieve the content in your document, use:</p>
+<pre><code>Element customerid = rootNode.getChild("customerId", db1);
+</code></pre>
+<p>Note that you get content using the Namespace object, not the prefix for the element (there is no "db1:" prefix for the "customerId"</p>

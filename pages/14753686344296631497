@@ -1,0 +1,21 @@
+<h1>
+How can I modify/update a java.net.URI object? - Stack Overflow
+<\h1>
+<p>Given a <a href="http://docs.oracle.com/javase/7/docs/api/java/net/URI.html" rel="nofollow"><code>java.net.URI</code></a> object, I need to either:</p>
+<ul>
+<li>destructively modify one field on that object (e.g. the <code>path</code> component). However there are no <code>setX</code> methods, so it seems these objects are supposed to be immutable.</li>
+<li>construct a new <code>URI</code> object that is the same as the original except for a given field ("functional update"). However there are no <code>withX</code> methods, so I would have to write my own logic to deal with this.</li>
+</ul>
+<p>Do I really have to write my own functions to deal with modification of <code>URI</code> objects?</p>
+<p>Yes you would have create a new object each time since the <code>java.net.URI</code> is immutable. You may use a third-party class like Apache HttpComponents' <a href="http://hc.apache.org/httpcomponents-client-ga/httpclient/apidocs/org/apache/http/client/utils/URIBuilder.html" rel="nofollow">URIBuilder</a>.</p>
+<p>Example from the <a href="http://hc.apache.org/httpcomponents-client-ga/tutorial/html/fundamentals.html" rel="nofollow">official tutorial</a>:</p>
+<pre><code>URI uri = new URIBuilder()
+    .setScheme("http")
+    .setHost("www.google.com")
+    .setPath("/search")
+    .setParameter("q", "httpclient")
+    .setParameter("btnG", "Google Search")
+    .setParameter("aq", "f")
+    .setParameter("oq", "")
+    .build();    // the build method creates a new URI instance behind the scenes
+</code></pre>

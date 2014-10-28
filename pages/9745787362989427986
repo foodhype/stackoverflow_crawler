@@ -1,0 +1,17 @@
+<h1>
+java - MAVEN_HOME, MVN_HOME or M2_HOME - Stack Overflow
+<\h1>
+<p>What's the correct Maven environment variable name: <code>MAVEN_HOME</code>, <code>MVN_HOME</code> or <code>M2_HOME</code>?  </p>
+<p><a href="http://stackoverflow.com/questions/17136324/what-is-the-difference-between-m2-home-and-maven-home">Here</a> I've found some information about <code>MAVEN_HOME</code> and <code>M2_HOME</code>. But what about <code>MVN_HOME</code>?</p>
+<p>I've personally never found it useful to set <code>M2_HOME</code>.</p>
+<p>What counts is your $PATH environment. Hijacking part of the answer from Danix, all you need is:</p>
+<pre><code>export PATH=/Users/xxx/sdk/apache-maven-3.0.5/bin:$PATH
+</code></pre>
+<p>The <code>mvn</code> script computes <code>M2_HOME</code> for you anyway for what it's worth.</p>
+<p>Here is my Maven setup. You can use it as an example. You don't need anything else in order to use Maven.</p>
+<p>M2_HOME is used for both Maven 2 and 3</p>
+<pre><code>export M2_HOME=/Users/xxx/sdk/apache-maven-3.0.5
+export M2=$M2_HOME/bin
+export MAVEN_OPTS="-Xmx1048m -Xms256m -XX:MaxPermSize=312M"
+export PATH=$M2:$PATH
+</code></pre>

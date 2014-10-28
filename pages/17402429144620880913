@@ -1,0 +1,86 @@
+<h1>
+java - Prevent file channel from closing after reading xml file - Stack Overflow
+<\h1>
+<p>For more detailed information regarding the motivation behind this goal (and my efforts to solve it) view my <a href="http://stackoverflow.com/questions/26587631/concurrently-write-to-xml-file">previous question</a>. I decided to ask this as a new question entirely as I thought that it had evolved sufficiently to merit doing so. As a summary, I intend to use JDOM in combination with NIO in order to:</p>
+<ol>
+<li>Gain an exclusive file lock on an xml file.</li>
+<li>Read the file into a <code>Document</code> object.</li>
+<li>Make arbitrary changes (with lock still active!).</li>
+<li>Write the changes back to the xml file.</li>
+<li>Release the file lock.</li>
+</ol>
+<p>The issue which I am getting however is that the built-in code to read the xml file into a document object closes the channel (and therefore releases the lock), as seen below:</p>
+<pre><code>import java.io.*;
+import java.nio.channels.Channels;
+import java.nio.channels.FileChannel;
+import javax.xml.parsers.*;
+import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
+
+public class Test4{ 
+    String path = "Test 2.xml";
+    private DocumentBuilderFactory dbFactory;
+    private DocumentBuilder dBuilder;
+    private Document doc;
+
+    public Test4(){
+        try (final FileChannel channel = new RandomAccessFile(new File(path), "rw").getChannel()) {
+            dbFactory = DocumentBuilderFactory.newInstance();
+            dBuilder = dbFactory.newDocumentBuilder();
+
+            System.out.println(channel.isOpen());
+            doc = dBuilder.parse(Channels.newInputStream(channel));
+            System.out.println(channel.isOpen());
+
+            channel.close();
+        } catch (IOException | ParserConfigurationException | SAXException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void main(String[] args){
+        new Test4();
+    }
+}
+</code></pre>
+<p>Output:</p>
+<pre><code>true
+false
+</code></pre>
+<p>Having looked through the documentation and trawled the built in Java libraries, I am really struggling to even find where the channel is closed, let alone how to prevent it closing. Any pointers would be great! Thanks.</p>
+<p>One clean way to do this is to create a <code>FilterInputStream</code> and override the <code>close</code> to do nothing:</p>
+<pre><code>public Test() {
+    try {
+        channel = new RandomAccessFile(new File(path), "rw").getChannel();
+        dbFactory = DocumentBuilderFactory.newInstance();
+        dBuilder = dbFactory.newDocumentBuilder();
+
+        System.out.println(channel.isOpen());
+        NonClosingInputStream ncis = new NonClosingInputStream(Channels.newInputStream(channel));
+        doc = dBuilder.parse(ncis);
+        System.out.println(channel.isOpen());
+        // Closes here.
+        ncis.reallyClose();
+        channel.close(); //Redundant
+    } catch (IOException | ParserConfigurationException | SAXException e) {
+        e.printStackTrace();
+    }
+}
+
+class NonClosingInputStream extends FilterInputStream {
+
+    public NonClosingInputStream(InputStream it) {
+        super(it);
+    }
+
+    @Override
+    public void close() throws IOException {
+        // Do nothing.
+    }
+
+    public void reallyClose() throws IOException {
+        // Actually close.
+        in.close();
+    }
+}
+</code></pre>

@@ -1,0 +1,30 @@
+<h1>
+java - What is best way of injecting values from environment variables? - Stack Overflow
+<\h1>
+<p>Consider this example  </p>
+<pre><code>@Stateless
+public class UniqueIdGenerator {
+    private static final String COLON = ":";
+    private String serverPrivateKey;
+
+    @SuppressWarnings("UnusedDeclaration")
+    public UniqueIdGenerator() {
+    }
+
+    public UniqueIdGenerator(@Nonnull final String serverPrivateKey) {
+        this.serverPrivateKey = serverPrivateKey;
+    }
+    ...
+}
+</code></pre>
+<p>I would like to <code>@Inject</code> value of <code>serverPrivateKey</code> based on an environment variable available in different environments. </p>
+<p>What is the best way to inject it here?</p>
+<p>We use the following pattern: There is a bean which gives us the value which we need. The bean knows how to get the value (environment, System property, whatever). To make things easier later, the type of the bean should be an interface (in your case that might be <code>IPrivateKeyProvider</code>).</p>
+<p>The <code>UniqueIdGenerator</code> is then created and we inject the first bean. The setup then decides which bean this will be (some kind of mock for tests and a real implementation for production code).</p>
+<p>To inject values from the environment, rather than writing your own producer methods, you may want to have a look at the <a href="http://deltaspike.apache.org/documentation/configuration.html" rel="nofollow">Configuration API</a> of Apache DeltaSpike. </p>
+<p>Using a <code>@ConfigProperty</code> qualifier, you can inject values from a number of different property sources, like system properties, environment variables or JNDI.</p>
+<p>Example:</p>
+<pre><code>@Inject
+@ConfigProperty(name = "SERVER_PRIVATE_KEY")
+private String serverPrivateKey;
+</code></pre>

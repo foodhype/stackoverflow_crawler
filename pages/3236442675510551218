@@ -1,0 +1,51 @@
+<h1>
+java - How to fix "The code of method .. is exceeding the 65535 bytes limit"? - Stack Overflow
+<\h1>
+<pre><code>    public static void main(String[] args) {
+
+        try
+        {
+
+        String[] studentnames={
+Student names is an array of :9000
+</code></pre>
+<p>...</p>
+<p>when I try to run I am getting a Error which is:</p>
+<pre><code>Multiple markers at this line
+    - The code of method main(String[]) is exceeding the 65535 
+     bytes limit
+</code></pre>
+<blockquote>
+<p>In java a methods can't have more  than 65535 bytes.</p>
+</blockquote>
+<p>So to fix this problem , break up your main(String[]) method in to multiple sub methods.</p>
+<p>The error code seems quite self-explanatory.</p>
+<pre><code>The code of method main(String[]) is exceeding the 65535 bytes limit 
+</code></pre>
+<p>Why not just load the names from a file instead?</p>
+<p>Some of the issues with doing it the way you are currently proposing are:</p>
+<ul>
+<li><p>firstly, you're hard-coding details, which is almost always a bad thing (See <a href="http://en.wikipedia.org/wiki/Hard_coding" rel="nofollow">this</a>);</p></li>
+<li><p>secondly, you're getting that error message; and</p></li>
+<li><p>thirdly, you make your code very unreadable.</p></li>
+</ul>
+<p>There are many more, of course, but these are the obvious ones.</p>
+<p>Initialising the studentnames array is counting towards the size of the main method. As there are 9000 student names each name can only be about 7 characters before you'll run out of space. As the others have stated you need to reduce the size of method. You can split it into pieces as Pramod said but in this case the bulk of the method is actually data. I would do as Infiltrator says and split the names out into a separate file and just read it in your main. Something like commons-io can be used to get you to effectively the same position you're starting in. </p>
+<pre><code>List&lt;String&gt; namelist = FileUtils.readLines(new File("studentnames.txt"));
+String[] studentnames = namelist.toArray(new String[0]);
+</code></pre>
+<p>You may find it useful to process the list rather than convert it to an array or alternatively you could use a LineIterator instead</p>
+<pre><code>LineIterator it = FileUtils.lineIterator(file);
+try {
+     while (it.hasNext()) {
+         String line = it.nextLine();
+         // do something with line
+     }
+ } finally {
+     it.close();
+ }
+</code></pre>
+<p>I would read the students names from a file however one work around which will make the class smaller as well</p>
+<pre><code>String[] studentnames= "Student names is an array of :9000".split(" ");
+</code></pre>
+<p>Instead of defining and using 9000 strings, this uses just one. The limit for a single String is just over 2 billion.</p>

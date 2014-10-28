@@ -1,0 +1,260 @@
+<h1>
+java - Http Status 500 returned on Spring MVC Using REST Templates and JSON Response Format - Stack Overflow
+<\h1>
+<p>My Project Consist Of Four Tables as Following :</p>
+<ol>
+<li><strong>Questions</strong> - Question_id, Question Text</li>
+<li><strong>User</strong> - User_ID, Name</li>
+<li><strong>Question_Answer</strong> - UserID, Question_ID, Answer</li>
+<li><strong>QuestionType</strong> - QuestionID, Tag</li>
+</ol>
+<p>I have to Generate questions based on Multiple Tags</p>
+<p>Or Simply return List of all Questions (when no Tags are Provided)</p>
+<p>Or insert answers Provided by The Users into The <strong>Question_Answer</strong> Table.</p>
+<p>The Controller class <strong>SpringServiceController.java</strong> (generates result in JSON format)is as Follows :</p>
+<pre><code>package com.bargadss.SpringService.Controller;
+
+import java.text.ParseException;
+import java.util.List;
+
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.bargadss.SpringService.DAO.QuestionService;
+import com.bargadss.SpringService.Domain.*;
+
+
+@RestController
+
+@RequestMapping("/service/question/")
+public class SpringServiceController {
+  QuestionService questionService=new QuestionService();
+
+ @RequestMapping(value = "/{tag1},{tag2},{tag3}", method =  RequestMethod.GET,headers="Accept=application/json")
+ public List&lt;Questions&gt; getQuestions(@PathVariable("tag1") String tag1, @PathVariable("tag2") String tag2, @PathVariable("tag3") String tag3) {
+  List&lt;Questions&gt; Qobj=questionService.getQuestionByTag(tag1, tag2, tag3);
+  return Qobj;
+ }
+
+ @RequestMapping(method = RequestMethod.GET,headers="Accept=application/json")
+ public List&lt;Questions&gt; getAllQuestions() {  
+  List&lt;Questions&gt; Qobj=questionService.getAllQuestion();
+  return Qobj;   
+ }
+
+ @RequestMapping(value="/insert/{user_id}/{question_id}/{answer}",method = RequestMethod.POST,headers="Accept=application/json")
+  public List&lt;Questions&gt; addQuestions(@PathVariable int user_id,@PathVariable int question_id,@PathVariable String answer) throws ParseException { 
+      Question_Answer qtnAns = new Question_Answer();
+      qtnAns.setUser_id(user_id);
+      qtnAns.setQuestion_id(question_id);
+      qtnAns.setAnswer(answer);
+      questionService.insertAnswer(qtnAns.getUser_id(), qtnAns.getQuestion_id(), qtnAns.getAnswer());
+      return questionService.getAllQuestion();        
+  }        
+  }
+</code></pre>
+<p>The <strong>ListQuestionController.java</strong> uses Spring REST temaplate ( generates JSP page ) is as follows: </p>
+<pre><code>package com.bargadss.SpringService.Controller;
+
+import java.util.LinkedHashMap;
+import java.util.List;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.bargadss.SpringService.Domain.*;
+
+@Controller
+public class ListQuestionController {
+
+ @RequestMapping("/listQuestion/{tag1},{tag2},{tag3}")
+    public ModelAndView listQuestions(@PathVariable("tag1") String Tag1, @PathVariable("tag2") String Tag2, @PathVariable("tag3") String Tag3) { 
+        RestTemplate restTemplate = new RestTemplate();
+        String url="http://localhost:8080/FetchQuestions/service/question/{tag1},{tag2},{tag3}";
+        List&lt;LinkedHashMap&gt; Qobj=restTemplate.getForObject(url, List.class,Tag1,Tag2,Tag3);
+        return new ModelAndView("listQuestion", "questions", Qobj);
+    }
+
+ @RequestMapping("/listAllQuestion/")
+    public ModelAndView listAllQuestion() { 
+        RestTemplate restTemplate = new RestTemplate();
+        String url="http://localhost:8080/FetchQuestions/service/question/";
+        List&lt;LinkedHashMap&gt; Qobj=restTemplate.getForObject(url, List.class);
+        return new ModelAndView("listQuestion", "questions", Qobj);
+    }
+
+ @RequestMapping("/insertQuestionAnswer/{user_id}/{qtn_id}/{answer}")
+    public ModelAndView insertQuestionAnswer(@PathVariable("user_id") String user_ID,
+           @PathVariable("qtn_id") String qtn_ID, @PathVariable("answer") String answer) { 
+        RestTemplate restTemplate = new RestTemplate();
+        String url="http://localhost:8080/FetchQuestions/service/question/insert/{user_id}/{qtn_id}/{answer}";
+        List&lt;LinkedHashMap&gt; Qobj=restTemplate.getForObject(url, List.class,user_ID,qtn_ID,answer);
+        return new ModelAndView("listQuestion", "questions", Qobj);
+    }
+
+  }
+</code></pre>
+<p>The <strong>QuestionService.java</strong> Class performs the DAO activity as Follows :</p>
+<pre><code>package com.bargadss.SpringService.DAO;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.List;
+import com.bargadss.SpringService.Domain.*;
+import com.bargadss.SpringService.Utility.DBUtility;
+
+
+public class QuestionService {
+
+private Connection connection;
+
+ public QuestionService() {
+  connection = DBUtility.getConnection();
+ }
+
+ public void insertAnswer(int userId,int qtnId,String answer){
+    //Question_Answer objQA = new Question_Answer();
+    PreparedStatement preparedStatement = null;
+    try{
+         preparedStatement = connection.prepareStatement("insert into question_answer values (?,?,?)");
+         preparedStatement.setInt(1, userId);
+         preparedStatement.setInt(2, qtnId);
+         preparedStatement.setString(3, answer);
+         int result = preparedStatement.executeUpdate();
+         if(result == 0)
+            System.out.println("INSERTION OF DATA FAILED");
+    } catch (SQLException e){
+         e.printStackTrace();
+    }
+    finally{
+        try { if (preparedStatement != null) preparedStatement.close(); } catch (Exception e) {System.out.println("Exception Closing The Prepared Statement");e.printStackTrace();};
+    }
+ }
+
+ public List&lt;Questions&gt; getAllQuestion(){
+     Questions objQ = new Questions();
+     ResultSet rs = null;
+     PreparedStatement preparedStatement = null;
+     List&lt;Questions&gt; qtns = new ArrayList&lt;Questions&gt;();
+     try {
+           preparedStatement = connection.prepareStatement("select * from questions");             
+           rs = preparedStatement.executeQuery();
+
+           while(rs.next()) {
+            objQ.setQuestion_id(Integer.parseInt( rs.getString("Question_id") ) );
+            objQ.setQuestion_text(rs.getString("Question_Text"));
+            qtns.add(objQ);   
+           }
+     } catch (SQLException e) {
+           e.printStackTrace();
+       }    
+       finally{
+           try { if (rs != null) rs.close(); } catch (Exception e) {System.out.println("Exception Closing The result Set");e.printStackTrace();};
+           try { if (preparedStatement != null) preparedStatement.close(); } catch (Exception e) {System.out.println("Exception Closing The Prepared Statement");e.printStackTrace();};
+           /*try { if (connection != null) connection.close(); } catch (Exception e) {System.out.println("Exception Closing The Connection");e.printStackTrace();};*/
+       }
+    return qtns;
+ }
+
+ public List&lt;Questions&gt; getQuestionByTag(String Tag1,String Tag2,String Tag3){       
+     Questions objQ = new Questions();
+     ResultSet rs = null;
+     PreparedStatement preparedStatement = null;
+     List&lt;Questions&gt; qtns = new ArrayList&lt;Questions&gt;();
+     try {
+           preparedStatement = connection.
+           prepareStatement("select questions.Question_id,questions.Question_Text from questions,questiontype " +
+                            "where questions.Question_id=questiontype.Question_id " +
+                            "and questiontype.Tag in (?,?,?)");
+           preparedStatement.setString(1, Tag1);
+           preparedStatement.setString(2, Tag2);
+           preparedStatement.setString(3, Tag3);
+           rs = preparedStatement.executeQuery();
+
+           while(rs.next()) {
+            objQ.setQuestion_id(Integer.parseInt( rs.getString("Question_id") ) );
+            objQ.setQuestion_text(rs.getString("Question_Text"));
+            qtns.add(objQ);   
+           }
+     } catch (SQLException e) {
+           e.printStackTrace();
+       }    
+       finally{
+           try { if (rs != null) rs.close(); } catch (Exception e) {System.out.println("Exception Closing The result Set");e.printStackTrace();};
+           try { if (preparedStatement != null) preparedStatement.close(); } catch (Exception e) {System.out.println("Exception Closing The Prepared Statement");e.printStackTrace();};
+           /*try { if (connection != null) connection.close(); } catch (Exception e) {System.out.println("Exception Closing The Connection");e.printStackTrace();};*/
+       }
+    return qtns;
+}
+
+}
+</code></pre>
+<p>On Execution of The Project <em>(Apache Tomcat 7.0.12)</em> with The Following URL it generates <strong>HTTP STATUS 500</strong> </p>
+<pre><code>http://localhost:8080/FetchQuestions/insertQuestionAnswer/3/9/True
+</code></pre>
+<p>Also When I Execute The Following URL it generates <strong>HTTP Status 405 - Request method 'GET' not supported</strong></p>
+<pre><code>http://localhost:8080/FetchQuestions/service/question/insert/3/9/True
+</code></pre>
+<p>What Am I Doing Wrong ?  Am I Missing Something ?</p>
+<p>The Stack Trace For HTTP Status 500 is As Follows :</p>
+<blockquote>
+<p>SEVERE: Servlet.service() for servlet [rest] in context with path [/FetchQuestions] threw exception [Request processing failed; nested exception is org.springframework.web.client.HttpClientErrorException: 405 Method Not Allowed] with root cause
+  org.springframework.web.client.HttpClientErrorException: 405 Method Not Allowed
+      at org.springframework.web.client.DefaultResponseErrorHandler.handleError(DefaultResponseErrorHandler.java:91)
+      at org.springframework.web.client.RestTemplate.handleResponseError(RestTemplate.java:576)
+      at org.springframework.web.client.RestTemplate.doExecute(RestTemplate.java:532)
+      at org.springframework.web.client.RestTemplate.execute(RestTemplate.java:489)
+      at org.springframework.web.client.RestTemplate.getForObject(RestTemplate.java:226)
+      at com.bargadss.SpringService.Controller.ListQuestionController.insertQuestionAnswer(ListQuestionController.java:47)
+      at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+      at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:57)
+      at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+      at java.lang.reflect.Method.invoke(Method.java:606)
+      at org.springframework.web.method.support.InvocableHandlerMethod.invoke(InvocableHandlerMethod.java:214)
+      at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:132)
+      at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:104)
+      at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandleMethod(RequestMappingHandlerAdapter.java:748)
+      at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:689)
+      at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:83)
+      at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:945)
+      at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:876)
+      at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:931)
+      at org.springframework.web.servlet.FrameworkServlet.doGet(FrameworkServlet.java:822)
+      at javax.servlet.http.HttpServlet.service(HttpServlet.java:621)
+      at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:807)
+      at javax.servlet.http.HttpServlet.service(HttpServlet.java:722)
+      at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:304)
+      at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:210)
+      at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:240)
+      at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:164)
+      at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:462)
+      at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:164)
+      at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:100)
+      at org.apache.catalina.valves.AccessLogValve.invoke(AccessLogValve.java:562)
+      at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:118)
+      at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:395)
+      at org.apache.coyote.http11.Http11Processor.process(Http11Processor.java:250)
+      at org.apache.coyote.http11.Http11Protocol$Http11ConnectionHandler.process(Http11Protocol.java:188)
+      at org.apache.coyote.http11.Http11Protocol$Http11ConnectionHandler.process(Http11Protocol.java:166)
+      at org.apache.tomcat.util.net.JIoEndpoint$SocketProcessor.run(JIoEndpoint.java:302)
+      at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)
+      at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:615)
+      at java.lang.Thread.run(Thread.java:745)</p>
+</blockquote>
+<blockquote>
+<p>Also When I Execute The Following URL it generates HTTP Status 405 -
+  Request method 'GET' not supported</p>
+</blockquote>
+<p>Change the request method of <code>SpringServiceController.SpringServiceController</code> method from <code>POST</code> to <code>GET</code>. And it should solve your problem.</p>
+<pre><code>@RequestMapping(value="/insert/{user_id}/{question_id}/{answer}",method = RequestMethod.GET,headers="Accept=application/json")
+</code></pre>

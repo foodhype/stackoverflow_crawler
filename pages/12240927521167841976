@@ -1,0 +1,33 @@
+<h1>
+java - How can I adjust this this function to FIFO & LRU? - Stack Overflow
+<\h1>
+<p>I am having some trouble understanding <strong>FIFO &amp; LRU</strong>, and I am trying to change my code to those. </p>
+<p>Here's my default pageFault method: </p>
+<pre><code>private void pageFault(int pageNumber){
+  pageFaults++;
+
+  try {
+    pageFile.seek(pageNumber*PageSize);
+    for(int b=0;b&lt;PageSize;b++)
+        RAM[freePos*PageSize+b]=pageFile.readByte();
+  } catch (IOException ex) {
+    Logger.getLogger(MemoryManager.class.getName()).log(Level.SEVERE, null, ex);
+  }
+
+  pageTable[pageNumber] = freePos; 
+  freePos++; 
+}
+</code></pre>
+<p>The method works perfectly, but I am not sure of how I can make it FIFO &amp; LRU, like this: </p>
+<p><strong>private void pageFaultFIFO(int pageNumber);</strong></p>
+<p><strong>private void pageFaultLRU(int pageNumber);</strong></p>
+<p>Lets clear out your FIFO and LRU understanding.</p>
+<p><b>FIFO</b>:
+the operating system keeps track of all the pages in memory in a queue, with the most recent arrival at the back, and the oldest arrival in front. When a page needs to be replaced, the page at the front of the queue (the oldest page) is selected. While FIFO is cheap and intuitive, it performs poorly in practical application.
+   <i></i></p><p>eg.
+if you have 10 shoes with you and your mom says trash out any 5, then you will choose the oldest 5 to trash out.
+</p><hr/>
+<b>LRU</b>:
+LRU works on the idea that pages that have been most heavily used in the past few instructions are most likely to be used heavily in the next few instructions too.
+   <i></i><p>eg.
+here, if you have 10 shoes with you and your mom says trash out any 5, then you will chose those 5 shoes to trash out which you use less frequently.</p>

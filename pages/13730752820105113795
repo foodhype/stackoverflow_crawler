@@ -1,0 +1,127 @@
+<h1>
+java - Getting Exceptions from logs on *nix using sed/awk/whatever - Stack Overflow
+<\h1>
+<p><br/>
+I want to get exceptions from log files created by tomcat.<br/> 
+Yes, I did some research, but because I don't have any experience with sed or awk - adjusting what I've found to what I need is kinda difficult.<br/>
+A sample file is shown below to have something to work on:<br/></p>
+<pre><code>    at org.springframework.scheduling.quartz.QuartzJobBean.execute(QuartzJobBean.java:86)
+Caused by: org.apache.cxf.transport.http.HTTPException: HTTP response '503: Service Temporarily Unavailable' when communicating with http://66.66.66.66:1234/aaa/bbb/ccc
+    at org.apache.cxf.transport.http.HTTPConduit$WrappedOutputStream.handleResponseInternal(HTTPConduit.java:1546)
+    at org.apache.cxf.interceptor.MessageSenderInterceptor$MessageSenderEndingInterceptor.handleMessage(MessageSenderInterceptor.java:62)
+    ... 39 more
+2014-10-24 11:40:01,558 ERROR [aaa.bbb.ccc.ddd.SomeClass] - some exception on parsing '2007/11/45' bla bla
+javax.xml.ws.WebServiceException: Could not send Message.
+    at org.apache.cxf.jaxws.JaxWsClientProxy.invoke(JaxWsClientProxy.java:145)
+    at org.quartz.simpl.SimpleThreadPool$WorkerThread.run(SimpleThreadPool.java:525)
+Caused by: org.apache.cxf.transport.http.HTTPException: HTTP response '503: Service Temporarily Unavailable' when communicating with http://66.66.66.66:1234/aaa/bbb/ccc
+    at org.apache.cxf.transport.http.HTTPConduit$WrappedOutputStream.handleResponseInternal(HTTPConduit.java:1546)
+    at org.apache.cxf.frontend.ClientProxy.invokeSync(ClientProxy.java:88)
+    at org.apache.cxf.jaxws.JaxWsClientProxy.invoke(JaxWsClientProxy.java:134)
+    ... 32 more
+2014-10-24 11:40:01,561 ERROR [aaa.bbb.ccc.ddd] - some error with id = 1214
+java.lang.NullPointerException
+    at sun.reflect.GeneratedMethodAccessor181.invoke(Unknown Source)
+    at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:25)
+    at org.quartz.simpl.SimpleThreadPool$WorkerThread.run(SimpleThreadPool.java:525)
+2014-10-24 11:44:48,253 INFO [org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean] - Closing Hibernate SessionFactory
+2014-10-24 11:44:48,253 INFO [org.hibernate.impl.SessionFactoryImpl] - closing
+2014-10-24 11:44:48 org.apache.catalina.loader.WebappClassLoader clearThreadLocalMap
+2014-10-24 11:44:50 org.apache.coyote.http11.Http11Protocol destroy
+INFO: Stopping Coyote HTTP/1.1 on http-8096
+</code></pre>
+<p>As we can see there are: 2 FULL EXCEPTIONS (we want them), 1 PARTIAL EXCEPTION(we dont want it). To make this example short I deleted some important stuff, like log4j:ERRORs, which we dont want.<br/><br/>
+so far I tried:<br/>
+AWK (its my 1st day with AWK, please dont laugh :D). its pretty straight forward.<br/>
+it finds "/t" (tab) + at + " " (empty space) in the beginning of every line. if 2 lines before it match given conditions (Exception and date) it prints them too. it works pretty well, but it also prints partial exception, which we DO NOT want.</p>
+<pre><code>BEGIN {
+    preprevious = "";
+    previous = "";
+}
+/^\tat / {
+    if( previous != "" ) {
+        if(preprevious ~ /20[0-9][0-9]-[0-9][0-9]-[0-9][0-9]/){
+            print preprevious;
+            preprevious = "";
+        }
+        if(previous ~ /.*Exception/) {
+            print previous;
+            previous = "";
+        }
+    }
+    print;
+    next;
+}
+ { preprevious = previous;
+    previous = $0; }
+</code></pre>
+<p>which i run like this:</p>
+<pre><code>awk -f awkScript testFileExceptions.txt
+</code></pre>
+<p>and SED in a bash script (I prefer that)</p>
+<pre><code>#!/bin/sh
+if [ "$#" -eq  "2" ]
+    then
+        tail -n $2 $1 | sed -n "/ ERROR \[/,/20[0-9][0-9]-[0-9][0-9]-[0-9][0-9]/p"
+    else
+        echo "usage: scriptName filePath amountOfLastLinesInFile"
+fi
+</code></pre>
+<p>it matches '" "+ERROR+" "' (with empty spaces on both sides of ERROR, so log4j:ERROR will not be matched) to date. it kind of works...<br/>
+disadvantages: <br/>
+1)it will work IF there are some additional lines between exceptions - like this:</p>
+<pre><code>        at org.apache.cxf.jaxws.JaxWsClientProxy.invoke(JaxWsClientProxy.java:134)
+        ... 32 more
+2014-10-24 11:40:01,561 INFO [aaa.bbb.ccc.ddd] - AAAAAAAAAAAAAAAAAAAAAAAA
+2014-10-24 11:40:01,561 ERROR [aaa.bbb.ccc.ddd] - some error with id = 1214
+java.lang.NullPointerException
+        at sun.reflect.GeneratedMethodAccessor181.invoke(Unknown Source)
+</code></pre>
+<p>if not - then the 2nd exception will not be shown<br/>
+2)it will also print out the last matched line (which is the one with the date match)</p>
+<p>so to sum up, what I want on outcome is:</p>
+<pre><code>2014-10-24 11:40:01,558 ERROR [aaa.bbb.ccc.ddd.SomeClass] - some exception on parsing '2007/11/45' bla bla javax.xml.ws.WebServiceException: Could not send Message.
+        at org.apache.cxf.jaxws.JaxWsClientProxy.invoke(JaxWsClientProxy.java:145)
+        at org.quartz.simpl.SimpleThreadPool$WorkerThread.run(SimpleThreadPool.java:525) 
+Caused by: org.apache.cxf.transport.http.HTTPException: HTTP response '503: Service Temporarily Unavailable' when communicating with http://66.66.66.66:1234/aaa/bbb/ccc
+        at org.apache.cxf.transport.http.HTTPConduit$WrappedOutputStream.handleResponseInternal(HTTPConduit.java:1546)
+        at org.apache.cxf.frontend.ClientProxy.invokeSync(ClientProxy.java:88)
+        at org.apache.cxf.jaxws.JaxWsClientProxy.invoke(JaxWsClientProxy.java:134)
+        ... 32 more
+
+2014-10-24 11:40:01,561 ERROR [aaa.bbb.ccc.ddd] - some error with id = 1214 java.lang.NullPointerException
+        at sun.reflect.GeneratedMethodAccessor181.invoke(Unknown Source)
+        at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:25)
+        at org.quartz.simpl.SimpleThreadPool$WorkerThread.run(SimpleThreadPool.java:525)
+</code></pre>
+<p>I also want to save different exceptions to different files (lets say exceptionOutputNNN.txt, for example exceptionOutput001.txt), but I'll figure it out later, shouldn't be that hard after I figured out how to do that for XMLs... :P</p>
+<p>well.. that's it. I hope someone can help me:)<br/>
+cheers<br/>
+<br/>
+edit: please note, that Exceptions can end with "... NN more" and with simple "\tat org.*"</p>
+<p>Still not sure exactly what you want<br/>
+This should work for what output you want though</p>
+<pre><code> awk '/^[0-9]+/{x=0}/ERROR/{x=1}x' file
+</code></pre>
+<h3>output</h3>
+<pre><code>2014-10-24 11:40:01,558 ERROR [aaa.bbb.ccc.ddd.SomeClass] - some exception on parsing '2007/11/45' bla bla
+javax.xml.ws.WebServiceException: Could not send Message.
+    at org.apache.cxf.jaxws.JaxWsClientProxy.invoke(JaxWsClientProxy.java:145)
+    at org.quartz.simpl.SimpleThreadPool$WorkerThread.run(SimpleThreadPool.java:525)
+Caused by: org.apache.cxf.transport.http.HTTPException: HTTP response '503: Service Temporarily     Unavailable' when communicating with http://66.66.66.66:1234/aaa/bbb/ccc
+at org.apache.cxf.transport.http.HTTPConduit$WrappedOutputStream.handleResponseInternal(HTTPConduit.java:1546)
+    at org.apache.cxf.frontend.ClientProxy.invokeSync(ClientProxy.java:88)
+    at org.apache.cxf.jaxws.JaxWsClientProxy.invoke(JaxWsClientProxy.java:134)
+    ... 32 more
+2014-10-24 11:40:01,561 ERROR [aaa.bbb.ccc.ddd] - some error with id = 1214
+java.lang.NullPointerException
+    at sun.reflect.GeneratedMethodAccessor181.invoke(Unknown Source)
+    at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:25)
+    at org.quartz.simpl.SimpleThreadPool$WorkerThread.run(SimpleThreadPool.java:525)
+</code></pre>
+<p>Edit: For your original file</p>
+<pre><code> awk 'a=/^[0-9]+/{x=0}a&amp;&amp;/ERROR/{x=1}x' file
+</code></pre>
+<p>or</p>
+<pre><code> awk '(/^[0-9]/&amp;&amp;x=/ERROR/)||x' file
+</code></pre>

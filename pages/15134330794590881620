@@ -1,0 +1,112 @@
+<h1>
+java - Inner class can access but not update values - AsyncTask - Stack Overflow
+<\h1>
+<p>I am trying to unzip a folder using Android's <code>AsyncTask</code>. The class (called Decompress) is an inner class of <code>Unzip</code> where Unzip itself is a non-Activity class. The pseudo-code is:  </p>
+<pre><code>public class Unzip {  
+  private String index;  
+  private String unzipDest;    //destination file for storing folder.
+  private Activity activity;
+  private boolean result;      //result of decompress.
+
+  public void unzip(String loc) {
+
+    Decompress workThread = new Decompress(loc, activity);
+    workThread.execute();  
+    if(unzip operation was successful) {
+      display(index);
+  }
+
+  //Class Decompress:
+class Decompress extends AsyncTask&lt;Void, Integer, Boolean&gt; {
+
+        private ProgressDialog pd = null;
+        private Context mContext;
+                private String loc;
+        private int nEntries;
+        private int entriesUnzipped;
+
+        public Decompress(String location, Context c) {
+                        loc = location;
+            mContext = c;
+            nEntries = 0;
+            entriesUnzipped = 0;
+            Log.v(this.toString(), "Exiting decompress constructor.");
+        }
+
+        @Override
+        protected void onPreExecute() {
+            Log.v(this.toString(), "Inside onPreExecute.");
+            pd = new ProgressDialog(mContext);
+            pd.setTitle("Unzipping folder.");
+            pd.setMessage("Unzip in progress.");
+            pd.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+            Log.v(this.toString(), "Showing dialog and exiting.");
+            pd.show();
+        }
+
+               @Override
+        protected Boolean doInBackground(Void... params) {
+                       //unzip operation goes here.
+                       unzipDest = something;  //unzip destination is set here.
+
+                       if(unzip operation is successful) {
+                          result = true;
+                          index = url pointing to location of unzipped folder.
+                       } else {
+                         result = false;
+                       }
+                }
+
+    @Override
+        protected void onPostExecute(Boolean result) {
+            if(result) {
+                if(pd != null) {
+                    pd.setTitle("Success");
+                    pd.setMessage("folder is now ready for use.");
+                    pd.show();
+                    pd.dismiss();
+                    pd = null;
+                    Log.v(this.toString(), "Unzipped.");
+
+                    index = unzipDest + "/someURL";
+                    Log.v(this.toString(), "index present in: " + index);
+                }
+            } else {
+                pd = ProgressDialog.show(mContext, "Failure", "Cannot unzip.");
+                pd.dismiss();
+            }
+        }
+    }   
+</code></pre>
+<p>Problems I am facing:<br/>
+1. The value of <code>unzipDest</code> and <code>index</code>, updated in <code>doInBackground</code>, remain null to <code>Unzip</code> and all its objects. How can I ensure that the values remain updated?<br/>
+2. I know that doInBackground occurs in a thread separate from the main UI thread. Does that mean that any values updated in the new thread will be lost once that thread returns?  </p>
+<blockquote>
+<p>How can I ensure that the values remain updated?</p>
+</blockquote>
+<p>They will be updated since they are member variables. However, since <code>AsyncTask</code> is asynchrounous, they might not be updated yet when you check them. You can use an <code>interface</code> to create a callback when these values are updated. <a href="http://stackoverflow.com/questions/12575068/how-to-get-the-result-of-onpostexecute-to-main-activity-because-asynctask-is-a">This SO answer covers how to do this</a></p>
+<blockquote>
+<p>Does that mean that any values updated in the new thread will be lost once that thread returns?</p>
+</blockquote>
+<p>No they shouldn't be "lost". They probably just haven't been changed in the <code>AsyncTask</code> when you check them.</p>
+<p>Since this isn't your actual code I can't see when you are trying to access them but you can use the <code>interface</code> method or call the functions that need these values in <code>onPostExecute()</code>. You also can do a <code>null</code> check before trying to access them. It just depends on the functionality and flow that you need as to which is the best way. Hope that helps.</p>
+<p><strong>Edit</strong></p>
+<p>In the answer I linked to, you tell the <code>Activity</code> that you will use that <code>interface</code> and override its method(s) with <code>implements AsyncResponse</code> in your <code>Activity</code> declaration after creating the separate <code>interface class</code></p>
+<pre><code>public class MainActivity implements AsyncResponse{
+</code></pre>
+<p>then, in your <code>Activity</code> still, you override the method you declared in that class (<code>void processFinish(String output);</code>)</p>
+<pre><code>@Override
+ void processFinish(String output){  // using same params as onPostExecute()
+ //this you will received result fired from async class of onPostExecute(result) method.
+   }
+</code></pre>
+<p>then this is called in <code>onPostExecute()</code> when the listener sees that it is done with <code>delegate.processFinish(result);</code> <code>delegate</code> is an instance of <code>AsyncResponse</code> (your interface class)</p>
+<pre><code>    public class AasyncTask extends AsyncTask{
+public AsyncResponse delegate=null;
+
+   @Override
+   protected void onPostExecute(String result) {
+      delegate.processFinish(result);
+   }
+</code></pre>
+<p><code>Interface</code> example taken from linked answer above and adjusted/commented for clarity. So be sure to upvote that answer if it helps anyone.</p>

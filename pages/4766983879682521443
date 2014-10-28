@@ -1,0 +1,25 @@
+<h1>
+java - What is the difference between @XMLValue and @JsonValue - Stack Overflow
+<\h1>
+<p><code>@JsonValue</code> javadoc states: "Marker annotation similar to javax.xml.bind.annotation.XmlValue". Why is it similar and what are the differences?</p>
+<p>I am asking this as a newbie in JAXB, because the javadoc is too cryptic so I can't find the real intent of both, and why @JsonValue is not available in the Java EE spec since it enables us to properly serialize an object into a string (see <a href="http://stackoverflow.com/questions/26578239/serialize-the-whole-class-as-a-string-field-instead-of-a-json-object?noredirect=1#comment41832209_26578239">here</a> for context)</p>
+<p><code>@JsonValue</code> is a Jackson annotation (Jackson is an open source JSON-binding library) and <code>@XmlValue</code> is a JAXB (<a href="https://jcp.org/en/jsr/detail?id=222" rel="nofollow">JSR-222</a>) annotation.  </p>
+<blockquote>
+<p>@JsonValue javadoc states: "Marker annotation similar to
+  javax.xml.bind.annotation.XmlValue". Why is it similar and what are
+  the differences?</p>
+</blockquote>
+<p>I don't believe there are any differences in terms of Jackson behaviour.</p>
+<blockquote>
+<p>I can't find the real intent of both</p>
+</blockquote>
+<p>There are atleast a couple of reasons Jackson supports the JAXB annotations in addition to its own:</p>
+<ol>
+<li>The JAXB annotations are included in Java SE 6 and above, so if you use them you aren't introducing any compile time dependencies on the Jackson libraries into your domain model.</li>
+<li>You may be mapping the same Java model to both XML and JSON, so you may be able to get away with only one set of metadata on your classes using the JAXB annotations for both.</li>
+<li>Some people are using JAXB with Jettison or StAXON to read/write JSON.  Since these models are already JAXB annotated, Jackson supporting these annotations makes it easier to transition those users to Jackson. </li>
+</ol>
+<blockquote>
+<p>why @JsonValue is not available in the Java EE spec</p>
+</blockquote>
+<p>JAXB is part of Java EE, and Jackson is not.  A JSON-Binding JSR (<a href="https://jcp.org/en/jsr/detail?id=367" rel="nofollow">JSR-367</a>) will be part of Java EE 8 (which hopefully Jackson will participate in and implement). </p>

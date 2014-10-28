@@ -1,0 +1,32 @@
+<h1>
+Java - Conflicting interface type parameters - Stack Overflow
+<\h1>
+<p>I'm working on a project that involves reading in structures from a string/stream.
+As part of my design I attempted to create something along these lines:</p>
+<ul>
+<li><code>public class Thing;</code></li>
+<li><code>public class SpecialThing extends Thing;</code></li>
+<li><code>public class ShinyThing extends Thing;</code></li>
+<li><code>public abstract class ThingDeserialiser implements Iterable&lt;Thing&gt;;</code></li>
+<li><code>public abstract class GenericThingDeserialiser&lt;T extends Thing&gt; extends ThingDeserialiser implements Iterable&lt;T&gt;;</code></li>
+<li><code>public class SpecialThingDeserialiser extends GenericThingDeserialiser&lt;SpecialThing&gt;;</code></li>
+<li><code>public class ShinyThingDeserialiser extends GenericThingDeserialiser&lt;ShinyThing&gt;;</code></li>
+</ul>
+<p>However I get an error with <code>GenericThingDeserialiser</code> because there is a conflict between</p>
+<ul>
+<li><code>ThingDeserialiser</code> implementing <code>Iterable&lt;Thing&gt;</code> and </li>
+<li><code>GenericThingDeserialiser</code> trying to implement <code>Iterable&lt;T&gt;</code>.</li>
+</ul>
+<p>I am able to create a set up like this in <code>C#</code>, why am I unable to do this in <code>Java</code>?</p>
+<p>Is there a way around this somehow?</p>
+<hr/>
+<p>I have also considered removing <code>ThingDeserialiser</code> in hope that <code>ShinyThingDeserialiser</code> and <code>SpecialThingDeserialiser</code> might both be castable to <code>GenericThingDeserialiser&lt;Thing&gt;</code>, but as expected that's not going to work.</p>
+<p>I have another idea involving interfaces, but I'd like to stop and ask for advice before continuing.</p>
+<p>If it's not obvious, the general idea is that the <code>Thing</code> objects are retrieved from strings/streams based on reasonably trivial patterns.</p>
+<p>I would definitely suggest removing ThingDeserialiser. You say you want to cast ShinyThingDeserialiser and SpecialThingDeserializer to GenericThingDeserialiser&lt;Thing&gt;, but that won't work. You should be able to cast them to GenericThingDeserialiser&lt;? extends Thing&gt;. Does that help?</p>
+<blockquote>
+<p>I am able to create a set up like this in C#, why am I unable to do this in Java?</p>
+</blockquote>
+<p>Because generics in Java are not covariant.</p>
+<p>That is, even if you have types <code>A</code> and <code>B</code>, and <code>B</code> extends <code>A</code>, class <code>Foo&lt;B&gt;</code> will not be a subtype of <code>Foo&lt;A&gt;</code>. Due to type erasure, at runtime, both will be <code>Foo</code>.</p>
+<p>As already suggested, you should really get rid of <code>ThingDeserialiser</code> here and just do with the <code>GenericThingDeserializer&lt;T extends Thing&gt; implements Iterable&lt;T&gt;</code>. You can then create, say, <code>MyThingDeserialiser implements GenericThingDeserialiser&lt;MyThing&gt;</code>.</p>

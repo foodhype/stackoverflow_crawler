@@ -1,0 +1,99 @@
+<h1>
+In Java, how do I reference the parent/sibling object of a class if they are not related by extension? - Stack Overflow
+<\h1>
+<p>I'm really confused about this subject, so please help me out. Searching on the internet gave some description about class and parent class. However, I'm more interested in "parent object" not a class that extends another class (inheritance).</p>
+<p>Let's say I have the following code for the Parent class:</p>
+<pre><code>public class ParentContainer extends JPanel 
+{
+    public Child1Container myChild1 = new Child1Container();
+    public Child2Container myChild2 = new Child2Container();
+
+    public ParentContainer() {
+        JLabel lblParent = new JLabel("I'm the parent");
+        add(lblParent);
+
+        add(myChild1);
+        add(myChild2);
+
+        JLabel lblParentReceiver = new JLabel("Awaiting message from child...");
+        add(lblParentReceiver);
+
+        //I'm going to give child 1 a call...
+        JButton btnParentToChild1 = new JButton("Parent: Hello Child 1!");
+        btnParentToChild1.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                JLabel child1Reicever = myChild1.lblChild1Receiver;
+                child1Receiver.setText("Parent Says: Hello Child 1?");
+            }
+        });
+        add(btnChild1ToParent);
+    }
+}
+</code></pre>
+<p>And the following code for the Child1 Class:</p>
+<pre><code>public class Child1Container extends JPanel 
+{
+    public JLabel lblChild1Receiver = new JLabel("Awaiting message from parent...");
+
+    public Child1Container() {
+        JLabel lblChild1 = new JLabel("I'm child 1");
+        add(lblChild1);
+
+        //I'm waiting for my parent to give me a call...
+        add(lblChild1Receiver);
+
+        //I tried to call my parent, but he can't hear me :(
+        JButton btnChild1ToParent = new JButton("Child1: Hello Parent!");
+        btnChild1ToParent.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                JLabel parentReceiver = this.getParent().lblParentReceiver;
+                parentReceiver.setText("Child1: Hello Parent!");
+            }
+        });
+        add(btnChild1ToParent);
+
+        //I tried to call my sibling, but he can't hear me either :(
+        JButton btnChild1ToSibling = new JButton("Child1: Hello Child2!");
+        btnChild1ToSibling.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                JLabel child2Receiver = getParent().myChild2.lblChild2Receiver;
+                child2Receiver.setText("Child1: Hello Child2!");
+            }
+        });
+        add(btnChild1ToSibling);
+    }
+}
+</code></pre>
+<p>And the following code for Child2 Class:</p>
+<pre><code>public class Child2Container extends JPanel 
+{
+    public JLabel lblChild2Receiver = new JLabel("Awaiting message from sibling...");
+
+    public Child2Container() {
+        JLabel lblChild2 = new JLabel("I'm child 2");
+        add(lblChild2);
+
+        //I'm waiting for my sibling to give me a call... I feel so alone :(
+        add(lblChild2Receiver);
+    }
+}
+</code></pre>
+<p>As you can see, it's a lonely digital world out there. In a family of <code>JPanel</code> containers, no one is able to talk to one another, except for maybe the parent to child.
+Is there a way to fix this?</p>
+<p>If you wish the child (contained) object to be able to communicate with the parent (container), you can pass a reference of the parent to the child's constructor :</p>
+<pre><code>public Child1Container(JPanel parent) {
+    ...
+    this.parent = parent;
+    ...
+}
+</code></pre>
+<p>Then the child can call any public method of the parent.</p>
+<p>You can have a method in the ParentContainer class :</p>
+<pre><code>public void callSiblings (JPanel from, String message)
+{
+    // sends message to all the children except of the sender child
+}
+</code></pre>
+<p>Then a child can call that method and send a message to its siblings :</p>
+<pre><code>this.parent.callSiblings (this, "hello brother!");
+</code></pre>

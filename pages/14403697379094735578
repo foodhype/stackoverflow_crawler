@@ -1,0 +1,47 @@
+<h1>
+java - Scanner hasNext(String pattern) falsely returns true - Stack Overflow
+<\h1>
+<p>I have written a scanner utility for parsing a template.<br/>
+Consider the code snippet : </p>
+<pre><code>String input = FileUtils.readFileToString(new File("input file path"));
+
+Scanner scanner = new Scanner(input);
+scanner.useDelimiter(System.getProperty("line.separator"));
+
+System.out.println("Checking");
+while(scanner.hasNext())
+{
+    System.out.print(scanner.hasNext("\\s*#[^\\n]*"));
+    System.out.println(" : " + scanner.nextLine());
+}
+</code></pre>
+<p>Input File Contents :</p>
+<pre><code># Line 1
+#######################
+
+# Check
+ # Matched with spaces
+     #
+
+
+// End of file
+</code></pre>
+<p>Note : The end of file line is not present in the input.</p>
+<p>Output produced :</p>
+<pre><code>Checking
+true : # Line 1
+true : #######################
+true : 
+true : # Check
+true :  # Matched with spaces
+true :       #
+false :      
+false :      
+</code></pre>
+<p>My question is why is it for the third line hasNext() returns true even when it does not start with a '#' ?<br/>
+Any help would be appreciated.</p>
+<p>Because <a href="http://docs.oracle.com/javase/7/docs/api/java/util/Scanner.html" rel="nofollow"><code>hasNext</code></a>:</p>
+<blockquote>
+<p>Returns true if the next token matches the pattern constructed from the specified string.</p>
+</blockquote>
+<p>The blank line contains no tokens so it is finding the next token from line 4.</p>

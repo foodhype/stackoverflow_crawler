@@ -12,7 +12,7 @@ class StackOverflowCrawler(object):
         self.base_url = "http://stackoverflow.com"
         self.visited = set()
         self.remaining = []
-        self.limit = 300
+        self.limit = float("inf")
         self.crawl_rate = 1
         self.valid_tags = set(["java"])
         self.minimum_question_upvote_count = 1
@@ -46,6 +46,38 @@ class StackOverflowCrawler(object):
             # Don't crawl too hard.
             time.sleep(self.crawl_rate)
 
+
+    def java_pages_crawl(self):
+        for page_no in xrange(1, 14703):
+            page_url = "http://stackoverflow.com/questions/tagged/java?page=%d&sort=votes&pagesize=50" % (page_no)
+            
+            print "Crawling page %d: %s\n" % (page_no, page_url)
+      
+            response = urllib2.urlopen(page_url)
+            time.sleep(self.crawl_rate)
+            self.visited.add(page_url)
+            html = response.read()
+            page_soup = BeautifulSoup(html)
+
+
+            for questions_container in page_soup.find_all(id="questions"):
+                for link in questions_container.find_all("a", "question-hyperlink"):
+                    link_url = urljoin(self.base_url, link.get("href"))
+
+                    if (link_url not in self.visited and
+                            link_url.startswith(self.base_url + "/questions") and
+                            not link_url.startswith(self.base_url + "/questions/tagged")):
+
+                        print "Crawling %s...\n" % (link_url)
+
+                        response = urllib2.urlopen(link_url)
+                        time.sleep(self.crawl_rate)
+                        self.visited.add(link_url)
+                        child_html = response.read()
+                        link_soup = BeautifulSoup(child_html)
+
+                        yield self.extract_data(link_soup, link_url)
+                  
 
     def extract_data(self, soup, url):
         page_title = soup.title.string
@@ -139,12 +171,12 @@ def main():
     crawler = StackOverflowCrawler()
     if not os.path.exists("pages"):
         os.makedirs("pages")
-    for page_metadata in crawler.crawl("http://stackoverflow.com/questions/tagged/java"):
+    for page_metadata in crawler.java_pages_crawl():
         if page_metadata is not None:
-            print str(page_metadata)
             f = open("pages/" + str(page_metadata.page_id), "w")
             f.write(str(page_metadata))
             f.close()
+            print "saved."
 
 
 if __name__ == "__main__":

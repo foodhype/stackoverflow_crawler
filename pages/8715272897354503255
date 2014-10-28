@@ -1,0 +1,74 @@
+<h1>
+do while loop not working? Java - Stack Overflow
+<\h1>
+<p>I trying to make a do while loop that will keep looping till x either equals y or x equals 7
+Here's the code:</p>
+<pre><code>else if(y == 4 || y == 5 || y == 6 || y == 8 || y == 9 || y == 10){
+    System.out.println("Value point is: " + y);
+
+    int x = rollDice();
+    do{
+        System.out.println("Roll again: " + rollDice());
+        x = rollDice();
+    }
+    while(x != y || rollDice() != 7);
+
+    if(x == y){
+        System.out.println("You Win!");
+    }
+    if(x == 7){
+        System.out.println("You Lose");
+    }
+    return;
+
+}}
+</code></pre>
+<p>This is what an output looks like from it: </p>
+<pre><code>Dice roll is: 9
+Value point is: 9
+Roll again: 2
+Roll again: 6
+Roll again: 6
+Roll again: 4
+Roll again: 7
+Roll again: 11
+Roll again: 8
+Roll again: 9
+Roll again: 2
+Roll again: 5
+Roll again: 6
+Roll again: 8
+Roll again: 5
+Roll again: 11
+Roll again: 5
+Roll again: 2
+Roll again: 9
+Roll again: 6
+Roll again: 3
+Roll again: 8
+Roll again: 8
+Roll again: 8
+Roll again: 4
+Roll again: 7
+Roll again: 10
+Roll again: 6
+Roll again: 5
+Roll again: 9
+Roll again: 4
+Roll again: 7
+Roll again: 4
+Roll again: 2
+Roll again: 8
+Roll again: 8
+You Win!
+</code></pre>
+<p>Obviously 8 does not equal 9, and since there was a seven near the beginning it should have said "you lose" I just don't where I'm going wrong on this? </p>
+<p><em>EDIT:</em></p>
+<p>Please change the loop to this:</p>
+<pre><code>do{
+    x = rollDice();
+    System.out.println("Roll again: " + x);
+}
+while(x != y &amp;&amp; x != 7);
+</code></pre>
+<p>You should only call rollDice() once per iteration. You were calling it 3 times each go-round. Also, the || needed to be changed to &amp;&amp;.</p>

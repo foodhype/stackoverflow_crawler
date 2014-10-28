@@ -1,0 +1,98 @@
+<h1>
+java - Unable to deserialize list directly inside rootelement using Jackson XML - Stack Overflow
+<\h1>
+<p>I am unable to deserialize a list that is directory a child of the root element, I have tried various kinds of things.</p>
+<p>My code:</p>
+<pre><code>private static class Cards {
+    @JacksonXmlElementWrapper(localName = "Cards")
+    private List&lt;Card&gt; cards;
+
+    public List&lt;Card&gt; getCards() {
+        return new ArrayList&lt;&gt;(cards);
+    }
+}
+
+private static class Card {
+    @JsonProperty("Name")
+    private String name;
+
+    @JsonProperty("Image")
+    private String image;
+
+    @JsonProperty("CardType")
+    private String cardType;
+
+    private final Map&lt;String, Integer&gt; resources = new HashMap&lt;&gt;();
+
+    private boolean duplicateResources = false;
+    private final List&lt;String&gt; duplicateResourceNames = new ArrayList&lt;&gt;();
+
+    @JsonAnySetter
+    private void addResource(final String name, final Object value) {
+        if (resources.containsKey(name)) {
+            duplicateResources = true;
+            duplicateResourceNames.add(name);
+        }
+        resources.put(name, Integer.parseInt(value.toString()));
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getImage() {
+        return image;
+    }
+
+    public String getCardType() {
+        return cardType;
+    }
+
+    @JsonAnyGetter
+    public Map&lt;String, Integer&gt; getResources() {
+        if (duplicateResources) {
+            throw new UncheckedCardLoadingException("Resources " + duplicateResourceNames + " have duplicate entries");
+        }
+        return new HashMap&lt;&gt;(resources);
+    }
+}
+</code></pre>
+<p>And:</p>
+<pre><code>ObjectMapper xmlMapper = new XmlMapper();
+Cards cards = xmlMapper.readValue(path.toFile(), Cards.class);
+</code></pre>
+<p>When trying to deserialize the following XML:</p>
+<pre><code>&lt;Cards&gt;
+    &lt;Card&gt;
+        &lt;Name&gt;test&lt;/Name&gt;
+        &lt;Image&gt;&lt;/Image&gt;
+        &lt;CardType&gt;test&lt;/CardType&gt;
+    &lt;/Card&gt;
+&lt;/Cards&gt;
+</code></pre>
+<p>It gives as error:</p>
+<blockquote>
+<p>com.cardshifter.core.cardloader.CardLoadingException: com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException: Unrecognized field "Card" (class com.cardshifter.core.cardloader.XmlCardLoader$Cards), not marked as ignorable (one known property: "Cards"])
+   at [Source: C:\Users\Frank\Dropbox\NetbeansProjects\Cardshifter\cardshifter-core\target\test-classes\com\cardshifter\core\cardloader\single-card.xml; line: 3, column: 9] (through reference chain: com.cardshifter.core.cardloader.Cards["Card"])</p>
+</blockquote>
+<p>First of all, look at these:</p>
+<pre><code>@JacksonXmlElementWrapper(localName = "Cards")
+private List&lt;Card&gt; cards;
+</code></pre>
+<p>And then look at the error:</p>
+<pre><code>com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException: Unrecognized field "Card" (class com.cardshifter.core.cardloader.XmlCardLoader$Cards)
+</code></pre>
+<p>Nowhere does it say <em>"Card"</em> in your class.</p>
+<p>Secondly, after fixing that, here's how I solved your entire loading:</p>
+<pre><code>private static class Cards {
+    @JacksonXmlElementWrapper(localName = "Card")
+    @JsonProperty("Card")
+    private List&lt;Card&gt; card = new ArrayList&lt;&gt;();
+
+    @JsonSetter
+    public void setCard(Card card) {
+        this.card.add(card);
+    }
+}
+</code></pre>
+<p>The <code>setCard</code> method simply tells Jackson that if it encounters this, it should interpret it as a <code>Card</code>, and then you provide the method that adds it to the array.</p>

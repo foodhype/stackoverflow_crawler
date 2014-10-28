@@ -1,0 +1,49 @@
+<h1>
+goto keyword in java - Stack Overflow
+<\h1>
+<p>Why is the <code>goto</code> keyword in java reserved though it is not used?</p>
+<p><strong>EDIT :</strong> Just to rephrase the question once again to avoid the ambiguity, I understand goto functionality is not supported in java and also understand that it makes code difficult to read. But its not supported, so then why make it reserved. It can be used as variable names atleast</p>
+<p>So they could be used one day if the language designers felt the need.</p>
+<p>Also, if programmers from languages that do have these keywords (eg. C, C++) use them by mistake, then the Java compiler can give a useful error message.</p>
+<p>Or maybe it was just to stop programmers using goto :)</p>
+<p>To prevent people from being killed by velociraptors.</p>
+<p><img alt="alt text" src="http://imgs.xkcd.com/comics/goto.png"/></p>
+<p>Because it's not supported and why would you want a <code>goto</code> keyword that did nothing or a variable named <code>goto</code>.</p>
+<p>Although you can use <code>break label;</code> and <code>continue label;</code> statements to effectively do what <code>goto</code> does. <strong>But I wouldn't recommend it.</strong></p>
+<pre><code>public static void main(String [] args) {
+
+     boolean t = true;
+
+     first: {
+        second: {
+           third: {
+               System.out.println("Before the break");
+
+               if (t) {
+                  break second;
+               }
+
+               System.out.println("Not executed");
+
+           }
+
+           System.out.println("Not executed - end of second block");
+
+        }
+
+        System.out.println("End of third block");
+
+     }
+}
+</code></pre>
+<p>Because although the Java language doesn't use it, JVM bytecode does.</p>
+<p>See the following link is shows all java reserved words and tells you what versions they where added.</p>
+<p><a href="http://java.sun.com/docs/books/tutorial/java/nutsandbolts/%5Fkeywords.html" rel="nofollow">http://java.sun.com/docs/books/tutorial/java/nutsandbolts/%5Fkeywords.html</a></p>
+<p>goto is reserved, even though it is not currently used, never say ever however :)</p>
+<p>Note that you can replace most of the benign uses of goto by</p>
+<ul>
+<li><p>return</p></li>
+<li><p>break</p></li>
+<li><p>break <em>label</em></p></li>
+<li><p>throw inside try-catch-finally</p></li>
+</ul>

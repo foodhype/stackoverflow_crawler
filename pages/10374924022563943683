@@ -1,0 +1,23 @@
+<h1>
+java - Replace string containing " with \"? - Stack Overflow
+<\h1>
+<p>How can I replace string containing <code>"</code> with <code>\"</code> ? </p>
+<p><code>replace(""","\"")</code> is not working for me.</p>
+<pre><code>public static String replaceSpecialCharsForJson(String str){
+    return str.replace("'","\'")
+              .replace(":","\\:")
+              .replace("\"","\"")
+              .replace("\r", "\\r")
+              .replace("\n", "\\n");
+} 
+</code></pre>
+<p>You can try with:</p>
+<pre><code>replace("\"","\\\"")
+</code></pre>
+<p>Since both <code>"</code> and <code>\</code> are <em>metacharacters</em>, you have to escape them with <code>\</code></p>
+<p>Try this one: </p>
+<pre><code>replace("\"","\\\"");
+</code></pre>
+<p>Every slash as part of a string needs to be escaped. So if you want a string to look like <code>"\\"</code>, your code will have to contain <code>String s = "\\\\"</code>. Ugly but true.</p>
+<p>The same goes for any other special character that might be interpreted. Quotes and colons inclusive.
+This means <code>" \ " "</code> will look like <code>" \\ \" "</code> (Added spaces to make separate escapes more visible)</p>
