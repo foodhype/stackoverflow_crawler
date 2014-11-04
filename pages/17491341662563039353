@@ -1,5 +1,0 @@
-<h1>
-java - Running javaCV on NetBeans - Stack Overflow
-<\h1>
-<p>Simple (and maybe stupid) question: Do I need to install openCV to use javaCV? I've already downloaded and imported javaCV libriaries to my Netbeans on MacOS. After running project i got multiple errors.</p>
-<p>Yes, you need OpenCV. OpenCV is in C/C++, the Java library is wrappers around it.</p>

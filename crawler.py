@@ -15,8 +15,8 @@ class StackOverflowCrawler(object):
         self.limit = float("inf")
         self.crawl_rate = 1
         self.valid_tags = set(["java"])
-        self.minimum_question_upvote_count = 1
-        self.minimum_answer_upvote_count = 1
+        self.minimum_question_upvote_count = 10
+        self.minimum_answer_upvote_count = 10
 
     def crawl(self, start_url):
         if not start_url.startswith(self.base_url):
@@ -54,7 +54,10 @@ class StackOverflowCrawler(object):
             print "Crawling page %d: %s\n" % (page_no, page_url)
       
             response = urllib2.urlopen(page_url)
+
+            # Don't crawl too hard.
             time.sleep(self.crawl_rate)
+
             self.visited.add(page_url)
             html = response.read()
             page_soup = BeautifulSoup(html)
@@ -71,7 +74,10 @@ class StackOverflowCrawler(object):
                         print "Crawling %s...\n" % (link_url)
 
                         response = urllib2.urlopen(link_url)
+
+                        # Don't crawl too hard.
                         time.sleep(self.crawl_rate)
+
                         self.visited.add(link_url)
                         child_html = response.read()
                         link_soup = BeautifulSoup(child_html)
@@ -119,7 +125,7 @@ class StackOverflowCrawler(object):
                 answer_text = answer_container.contents
                 break
 
-            for upvote_count_container in answer_div.find_all("span", "vote-count-post "):
+            for upvote_count_container in answer_div.find_all("span", "vote-count-post "): # <- This space is annoying but necessary.
                 answer_upvote_count = int(upvote_count_container.contents[0])
                 break
 
@@ -143,7 +149,7 @@ class PageMetadata(object):
     def __str__(self):
         return "\n".join(["<h1>",
                 self.title,
-                "<\h1>",
+                "</h1>",
                 str(self.question),
                 "\n".join([str(answer) for answer in self.answers])])
 
@@ -173,8 +179,14 @@ def main():
         os.makedirs("pages")
     for page_metadata in crawler.java_pages_crawl():
         if page_metadata is not None:
-            f = open("pages/" + str(page_metadata.page_id), "w")
-            f.write(str(page_metadata))
+            f = open("pages/" + str(page_metadata.page_id) + ".question.html", "w")
+            f.write("\n".join(["<h1>",
+                    page_metadata.title,
+                    "</h1>",
+                    str(page_metadata.question)]))
+            f.close()
+            f = open("pages/" + str(page_metadata.page_id) + ".answer.html", "w")
+            f.write("\n".join([str(answer) for answer in page_metadata.answers]))
             f.close()
             print "saved."
 
